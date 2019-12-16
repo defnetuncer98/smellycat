@@ -1,7 +1,6 @@
 import * as THREE from './node_modules/three/build/three.module.js';
 import { GLTFLoader } from './node_modules/three/examples/jsm/loaders/GLTFLoader.js';
 import { FBXLoader } from './node_modules/three/examples/jsm/loaders/FBXLoader.js';
-import { RGBELoader } from './node_modules/three/examples/jsm/loaders/RGBELoader.js';
 
 //////////////////////////////
 // Global objects
@@ -35,7 +34,7 @@ var MODELS = [
         { 
             name: "SmellyCat", 
             loader:"fbx",
-            path: "./node_modules/three/examples/models/gltf/cat/cat.fbx",
+            path: "./node_modules/three/examples/models/fbx/cat.fbx",
             position: { x: 15, y: 20, z: -15 }, // Where to put the unit in the scene
             rotation: { x: 0, y: 0, z: 0},
             scale: 0.007, // Scaling of the unit. 1.0 means: use original size, 0.1 means "10 times smaller", etc.
@@ -293,27 +292,7 @@ function initScene() {
         camera.position.set( 30, 30, -10 );
         clock = new THREE.Clock();
         scene = new THREE.Scene();
-/*
-        new RGBELoader()
-        .setDataType( THREE.UnsignedByteType )
-        .setPath( './node_modules/three/examples/textures/equirectangular/grandcanyon/' )
-        .load( 'grandcanyon_3k.hdr', function ( texture ) {
-            //var pmremGenerator = new PMREMGenerator( renderer );
-            //envMap = pmremGenerator.fromEquirectangular( texture ).texture;
-            //pmremGenerator.dispose();
-            //background = envMap;
-
-            var options = {
-                minFilter: texture.minFilter,
-                magFilter: texture.magFilter
-            };
-            
-            scene.background = new THREE.WebGLRenderTargetCube( 1024, 1024, options ).fromEquirectangularTexture( renderer, texture );
-            var pmremGenerator = new PMREMGenerator( scene.wbackground.texture );
-            pmremGenerator.update( renderer );
-            pmremGenerator.dispose();
-        });
-*/        
+      
         scene.background = new THREE.Color( 0xa0a0a0 );
         //scene.fog = new THREE.Fog( 0xa0a0a0, 10, 22 );
         var hemiLight = new THREE.HemisphereLight( 0xffffff, 0x444444 );
@@ -604,8 +583,8 @@ function ThirdPersonControls ( object, domElement ) {
 			var phi = THREE.Math.degToRad( 90 - lat );
 
 
-                        lookVertical=false;
-                        if(lookVertical) lon -= this.mouseX * actualLookSpeed * horizontalLookRatio;
+                        this.lookVertical=false;
+                        if(this.lookVertical) lon -= this.mouseX * actualLookSpeed * horizontalLookRatio;
 			lon = Math.max( - 0, Math.min( 0, lon ) );
                         var theta = THREE.Math.degToRad( lon );
 
