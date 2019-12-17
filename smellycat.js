@@ -1,6 +1,7 @@
 import * as THREE from './node_modules/three/build/three.module.js';
 import { GLTFLoader } from './node_modules/three/examples/jsm/loaders/GLTFLoader.js';
 import { FBXLoader } from './node_modules/three/examples/jsm/loaders/FBXLoader.js';
+import { DRACOLoader } from './node_modules/three/examples/jsm/loaders/DRACOLoader.js';
 
 //////////////////////////////
 // Global objects
@@ -18,11 +19,47 @@ var canJump = false;
 var velocity = new THREE.Vector3();
 var direction = new THREE.Vector3();
 var prevTime = performance.now();
-var models = [];
 var canJump = false;
 var controls = null;
 var shiftisup = true;
 var idle = true;
+var transformAux1;
+var softBodyHelpers;
+var physicsWorld;
+var raycaster = new THREE.Raycaster();
+var ballMaterial = new THREE.MeshPhongMaterial( { color: 0x202020 } );
+var pos = new THREE.Vector3();
+var quat = new THREE.Quaternion();
+var margin = 0.05;
+var rigidBodies = [];
+var softBodies = [];
+const gravityConstant = - 9.8;
+var clickRequest = false;
+var mouseCoords = new THREE.Vector2();
+
+function createRigidBody( threeObject, physicsShape, mass, pos, quat ) {
+        threeObject.position.copy( pos );
+        threeObject.quaternion.copy( quat );
+        var transform = new Ammo.btTransform();
+        transform.setIdentity();
+        transform.setOrigin( new Ammo.btVector3( pos.x, pos.y, pos.z ) );
+        transform.setRotation( new Ammo.btQuaternion( quat.x, quat.y, quat.z, quat.w ) );
+        var motionState = new Ammo.btDefaultMotionState( transform );
+        var localInertia = new Ammo.btVector3( 0, 0, 0 );
+        physicsShape.calculateLocalInertia( mass, localInertia );
+        var rbInfo = new Ammo.btRigidBodyConstructionInfo( mass, motionState, physicsShape, localInertia );
+        var body = new Ammo.btRigidBody( rbInfo );
+        threeObject.userData.physicsBody = body;
+        scene.add( threeObject );
+        if ( mass > 0 ) {
+                rigidBodies.push( threeObject );
+                // Disable deactivation
+                body.setActivationState( 4 );
+        }
+        physicsWorld.addRigidBody( body );
+        return body;
+}
+
 //
 //////////////////////////////
 // Information about our 3D models and units
@@ -35,7 +72,7 @@ var MODELS = [
             name: "SmellyCat", 
             loader:"fbx",
             path: "./node_modules/three/examples/models/fbx/cat.fbx",
-            position: { x: 15, y: 20, z: -15 }, // Where to put the unit in the scene
+            position: { x: 0, y: 5, z: 0 }, // Where to put the unit in the scene
             rotation: { x: 0, y: 0, z: 0},
             scale: 0.007, // Scaling of the unit. 1.0 means: use original size, 0.1 means "10 times smaller", etc.
             animationName: 5 // Name of animation to run            
@@ -80,14 +117,33 @@ var MODELS = [
     */
 ];
 
-//////////////////////////////
-// The main setup happens here
-//////////////////////////////
-var numLoadedModels = 0;
-initScene();
-initRenderer();
-loadModels();
-animate();
+Ammo().then( function ( AmmoLib ) {
+    Ammo = AmmoLib;
+    init();
+    animate();
+} );
+
+function init() {
+    initScene();
+    initRenderer();
+    initPhysics();
+    loadModels();
+    initInput();
+}    
+
+function initPhysics() {
+        // Physics configuration
+        var collisionConfiguration = new Ammo.btSoftBodyRigidBodyCollisionConfiguration();
+        var dispatcher = new Ammo.btCollisionDispatcher( collisionConfiguration );
+        var broadphase = new Ammo.btDbvtBroadphase();
+        var solver = new Ammo.btSequentialImpulseConstraintSolver();
+        var softBodySolver = new Ammo.btDefaultSoftBodySolver();
+        physicsWorld = new Ammo.btSoftRigidDynamicsWorld( dispatcher, broadphase, solver, collisionConfiguration, softBodySolver );
+        physicsWorld.setGravity( new Ammo.btVector3( 0, gravityConstant, 0 ) );
+        physicsWorld.getWorldInfo().set_m_gravity( new Ammo.btVector3( 0, gravityConstant, 0 ) );
+        transformAux1 = new Ammo.btTransform();
+        softBodyHelpers = new Ammo.btSoftBodyHelpers();
+}
 //////////////////////////////
 //////////////////////////////
 // Function implementations
@@ -102,8 +158,20 @@ function loadModels() {
                 var m = MODELS[ i ];
                 if(m.loader==="fbx") loadFBXModel( m );
                 else loadGLTFModel( m );
-                
         }
+        pos.set( 0, - 0.5, 0 );
+        quat.set( 0, 0, 0, 1 );
+        var ground = createParalellepiped( 100, 1, 100, 0, pos, quat, new THREE.MeshPhongMaterial( ) );
+        ground.castShadow = true;
+        ground.receiveShadow = true;        
+}
+
+function createParalellepiped( sx, sy, sz, mass, pos, quat, material ) {
+        var threeObject = new THREE.Mesh( new THREE.BoxBufferGeometry( sx, sy, sz, 1, 1, 1 ), material );
+        var shape = new Ammo.btBoxShape( new Ammo.btVector3( sx * 0.5, sy * 0.5, sz * 0.5 ) );
+        shape.setMargin( margin );
+        createRigidBody( threeObject, shape, mass, pos, quat );
+        return threeObject;
 }
 
 /**
@@ -141,12 +209,17 @@ function getModelByName( name ) {
 
 function loadGLTFModel( model ) {
         var loader = new GLTFLoader();
+	var dracoLoader = new DRACOLoader();
+	dracoLoader.setDecoderPath( './node_modules/three/examples/js/libs/draco/gltf/' );
+        loader.setDRACOLoader( dracoLoader );        
         loader.load( model.path, function ( gltf ) {
                 // Enable Shadows
                 var gltfscene = gltf.scene;
+                console.log(gltf);
                 gltf.scene.traverse( function ( object ) {
                         if ( object.isMesh ) {
                                 object.castShadow = true;
+                                object.receiveShadow = true;
                         }
                 } );
                 // Different models can have different configurations of armatures and meshes. Therefore,
@@ -163,8 +236,16 @@ function loadGLTFModel( model ) {
                         gltfscene.rotation.copy( new THREE.Euler( model.rotation.x,model.rotation.y,model.rotation.z));
                 }
                 //startAnimation( gltfscene, gltf.animations, model.animationName );
-                scene.add( gltfscene );
-                models.push( gltfscene );
+                //scene.add( gltfscene );
+                //models.push( gltfscene );
+
+            
+            // if no need for ground model then change mass to 0
+                var ballMass = 5;
+                var ballShape = new Ammo.btBoxShape( new Ammo.btVector3( 100,10,100 ) );
+                ballShape.setMargin( margin );
+                var ballBody = createRigidBody( gltfscene, ballShape, ballMass, gltfscene.position, gltfscene.quaternion );
+                ballBody.setFriction( 0.5 );
                 console.log( "Done loading model", model.name );
                 } );
 }
@@ -196,8 +277,11 @@ function loadFBXModel( model ) {
                         gltf.rotation.copy( new THREE.Euler( model.rotation.x,model.rotation.y,model.rotation.z));
                 }
                 startAnimation( gltf, gltf.animations, model.animationName );
-                scene.add( gltf );
-                models.push( gltf );
+                var ballMass = 5
+                var ballShape = new Ammo.btBoxShape( new Ammo.btVector3( 1,1,2 ) );
+                ballShape.setMargin( margin );                
+                var ballBody = createRigidBody( gltf, ballShape, ballMass, gltf.position, gltf.quaternion );
+                ballBody.setFriction( 0.5 );
                 console.log( "Done loading model", model.name );
                 } );
 }
@@ -241,18 +325,10 @@ function animate() {
         
         if(!idle) mixers[0].update(delta);
         
-        if(models.length==1){
-            controls = new ThirdPersonControls( models[0], renderer.domElement );
-            controls.movementSpeed = 5;
-            controls.lookSpeed = 0.1;
-            controls.constrainVertical = true;
-            controls.verticalMax = 2.1;
-            controls.verticalMin = 1.9;
-            controls.constrainHorizontal = true;
-            controls.horizontalMax = 5;
-            controls.horizontalMin = 4.5;            
+        if(rigidBodies.length==1){
+            controls = new ThirdPersonControls( rigidBodies[0], renderer.domElement );         
         }
-        else if(models.length>1){
+        else if(rigidBodies.length>1){
             controls.update( delta );            
         }
         
@@ -262,7 +338,63 @@ function animate() {
         //var theta = Math.atan2(vector.x,vector.z);
         //models[0].rotation.copy(  new THREE.Euler(theta, 0, theta ));
         //scene.add(models[0]);        
+        //updatePhysics( delta );
+	processClick();
         renderer.render( scene, camera );
+}
+
+function updatePhysics( deltaTime ) {
+        // Step world
+        physicsWorld.stepSimulation( deltaTime, 10 );
+        // Update soft volumes
+        for ( var i = 0, il = softBodies.length; i < il; i ++ ) {
+                var volume = softBodies[ i ];
+                var geometry = volume.geometry;
+                var softBody = volume.userData.physicsBody;
+                var volumePositions = geometry.attributes.position.array;
+                var volumeNormals = geometry.attributes.normal.array;
+                var association = geometry.ammoIndexAssociation;
+                var numVerts = association.length;
+                var nodes = softBody.get_m_nodes();
+                for ( var j = 0; j < numVerts; j ++ ) {
+                        var node = nodes.at( j );
+                        var nodePos = node.get_m_x();
+                        var x = nodePos.x();
+                        var y = nodePos.y();
+                        var z = nodePos.z();
+                        var nodeNormal = node.get_m_n();
+                        var nx = nodeNormal.x();
+                        var ny = nodeNormal.y();
+                        var nz = nodeNormal.z();
+                        var assocVertex = association[ j ];
+                        for ( var k = 0, kl = assocVertex.length; k < kl; k ++ ) {
+                                var indexVertex = assocVertex[ k ];
+                                volumePositions[ indexVertex ] = x;
+                                volumeNormals[ indexVertex ] = nx;
+                                indexVertex ++;
+                                volumePositions[ indexVertex ] = y;
+                                volumeNormals[ indexVertex ] = ny;
+                                indexVertex ++;
+                                volumePositions[ indexVertex ] = z;
+                                volumeNormals[ indexVertex ] = nz;
+                        }
+                }
+                geometry.attributes.position.needsUpdate = true;
+                geometry.attributes.normal.needsUpdate = true;
+        }
+        // Update rigid bodies
+        for ( var i = 0, il = rigidBodies.length; i < il; i ++ ) {
+                var objThree = rigidBodies[ i ];
+                var objPhys = objThree.userData.physicsBody;
+                var ms = objPhys.getMotionState();
+                if ( ms ) {
+                        ms.getWorldTransform( transformAux1 );
+                        var p = transformAux1.getOrigin();
+                        var q = transformAux1.getRotation();
+                        objThree.position.set( p.x(), p.y(), p.z() );
+                        objThree.quaternion.set( q.x(), q.y(), q.z(), q.w() );
+                }
+        }
 }
 //////////////////////////////
 // General Three.JS stuff
@@ -289,7 +421,7 @@ function initRenderer() {
  */
 function initScene() {
         camera = new THREE.PerspectiveCamera( 45, window.innerWidth / window.innerHeight, 1, 10000 );
-        camera.position.set( 30, 30, -10 );
+        camera.position.set( 0, 0, 0 );
         clock = new THREE.Clock();
         scene = new THREE.Scene();
       
@@ -308,20 +440,6 @@ function initScene() {
         dirLight.shadow.camera.near = 0.1;
         dirLight.shadow.camera.far = 40;
         scene.add( dirLight );
-        // ground
-//        
-//        var groundMesh = new THREE.Mesh(
-//                new THREE.PlaneBufferGeometry( 40, 40 ),
-//                new THREE.MeshPhongMaterial( {
-//                        color: 0x999999,
-//                        depthWrite: false
-//                } )
-//        );
-//    
-//        groundMesh.rotation.x = - Math.PI / 2;
-//        groundMesh.receiveShadow = true;
-//        scene.add( groundMesh );
-//    
         window.addEventListener( 'resize', onWindowResize, false );
         var axesHelper = new THREE.AxesHelper( 100 );
         scene.add( axesHelper );
@@ -346,8 +464,6 @@ function ThirdPersonControls ( object, domElement ) {
 
 	this.enabled = true;
 
-	this.movementSpeed = 1.0;
-	this.lookSpeed = 0.005;
 	this.lookVertical = true;
 	this.autoForward = false;
 
@@ -358,14 +474,17 @@ function ThirdPersonControls ( object, domElement ) {
 	this.heightMin = 0.0;
 	this.heightMax = 1.0;
 
-	this.constrainVertical = false;
-	this.verticalMin = 0;
-	this.verticalMax = Math.PI;
+        this.movementSpeed = 80;
+        this.lookSpeed = 0.1;
 
-	this.constrainHorizontal = false;
-	this.horizontalMin = 0;
-	this.horizontalMax = Math.PI;
+        this.constrainVertical = true;
+        this.verticalMax = 2.1; //default Math.PI
+        this.verticalMin = 1.9; //default 0
         
+        this.constrainHorizontal = true;
+        this.horizontalMax = 5;
+        this.horizontalMin = 4.5;       
+    
 	this.mouseDragOn = false;
 
 	// internals
@@ -597,24 +716,55 @@ function ThirdPersonControls ( object, domElement ) {
 			}
 
 			if ( this.moveForward || ( this.autoForward && ! this.moveBackward ) ) {
-                            idle=false;
-                            this.object.translateZ( - ( actualMoveSpeed + this.autoSpeedFactor ) );
+                            idle=false;                            
+                            this.object.userData.physicsBody.setLinearVelocity(new Ammo.btVector3( 0, 0, -actualMoveSpeed));
+                            
+                            //this.object.translateZ( - ( actualMoveSpeed + this.autoSpeedFactor ) );
                             //camera.lookAt(this.object.position);
                         }
 			else if ( this.moveBackward ) {
                             idle=false;
-                            this.object.translateZ( actualMoveSpeed );
+                            var tempVec = new THREE.Vector3();
+                            tempVec.set( 0,0, -10);
+                            //this.object.localToWorld(tempVec);
+                            this.object.userData.physicsBody.setLinearVelocity(new Ammo.btVector3( 0, 0, actualMoveSpeed));
+                            //this.object.userData.physicsBody.setLinearVelocity( new Ammo.btVector3( 0, 0, - ( actualMoveSpeed + this.autoSpeedFactor ) ) );
+                            
+                            //this.object.translateZ( actualMoveSpeed );
                             //camera.lookAt(this.object.position);
                         }
                         else{
                             idle=true;
+                            this.object.userData.physicsBody.setLinearVelocity(new Ammo.btVector3( 0, 0, 0));                            
                             //camera.lookAt(this.object.position);
                         }
-                        camera.position.copy(new THREE.Vector3(this.object.position.x+15,this.object.position.y+10,this.object.position.z));                        
-                        camera.lookAt(new THREE.Vector3().setFromSphericalCoords( 1, phi, theta ).add( camera.position ));
-                            
-                        this.object.rotation.y = 4.4+(-this.mouseX*0.001);
-                        rotateAboutPoint(models[1], this.object.position, new THREE.Vector3(0,1,0).normalize(), this.mouseDeltaX*0.00005*Math.abs(this.mouseX), true);
+                        
+                        
+               
+                        
+                                // Step world
+                        physicsWorld.stepSimulation( delta, 10 );
+                        // Update rigid bodies
+                        for ( var i = 0, il = rigidBodies.length; i < il; i ++ ) {
+                                var objThree = rigidBodies[ i ];
+                                var objPhys = objThree.userData.physicsBody;
+                                var ms = objPhys.getMotionState();
+                                if ( ms ) {
+                                        ms.getWorldTransform( transformAux1 );
+                                        var p = transformAux1.getOrigin();
+                                        var q = transformAux1.getRotation();
+                                        objThree.position.set( p.x(), p.y(), p.z() );
+                                        objThree.quaternion.set( q.x(), q.y(), q.z(), q.w() );
+                                }
+                        }                        
+
+                        camera.position.copy(new THREE.Vector3(this.object.position.x,this.object.position.y+10,this.object.position.z-15));
+                        camera.lookAt(this.object.position);
+                        //camera.lookAt(new THREE.Vector3().setFromSphericalCoords( 1, phi, theta ).add( camera.position ));
+                                     
+                        //this.object.rotation.y = 4.4+(-this.mouseX*0.001);
+                        
+//                        rotateAboutPoint(rigidBodies[1], this.object.position, new THREE.Vector3(0,1,0).normalize(), this.mouseDeltaX*0.00005*Math.abs(this.mouseX), true);
                         this.mouseDeltaX=0.0;
                         this.mouseDeltaY=0.0;
                         
@@ -636,8 +786,8 @@ function ThirdPersonControls ( object, domElement ) {
 
 	this.domElement.addEventListener( 'contextmenu', contextmenu, false );
 	this.domElement.addEventListener( 'mousemove', _onMouseMove, false );
-	this.domElement.addEventListener( 'mousedown', _onMouseDown, false );
-	this.domElement.addEventListener( 'mouseup', _onMouseUp, false );
+	//this.domElement.addEventListener( 'mousedown', _onMouseDown, false );
+	//this.domElement.addEventListener( 'mouseup', _onMouseUp, false );
 
 	window.addEventListener( 'keydown', _onKeyDown, false );
 	window.addEventListener( 'keyup', _onKeyUp, false );
@@ -669,3 +819,37 @@ function ThirdPersonControls ( object, domElement ) {
 	setOrientation( );
 
 };
+
+function initInput() {
+        window.addEventListener( 'mousedown', function ( event ) {
+                if ( ! clickRequest ) {
+                        mouseCoords.set(
+                                ( event.clientX / window.innerWidth ) * 2 - 1,
+                                - ( event.clientY / window.innerHeight ) * 2 + 1
+                        );
+                        clickRequest = true;
+                }
+        }, false );
+}
+function processClick() {
+        if ( clickRequest ) {
+                raycaster.setFromCamera( mouseCoords, camera );
+                // Creates a ball
+                var ballMass = 1;
+                var ballRadius = 0.4;
+                var ball = new THREE.Mesh( new THREE.SphereBufferGeometry( ballRadius, 18, 16 ), ballMaterial );
+                ball.castShadow = true;
+                ball.receiveShadow = true;
+                //var ballShape = new Ammo.btSphereShape( ballRadius );
+                ballShape.setMargin( margin );
+                pos.copy( raycaster.ray.direction );
+                pos.add( raycaster.ray.origin );
+                quat.set( 0, 0, 0, 1 );
+                var ballBody = createRigidBody( ball, ballShape, ballMass, pos, quat );
+                ballBody.setFriction( 0.5 );
+                pos.copy( raycaster.ray.direction );
+                pos.multiplyScalar( 14 );
+                ballBody.setLinearVelocity( new Ammo.btVector3( pos.x, pos.y, pos.z ) );
+                clickRequest = false;
+        }
+}
