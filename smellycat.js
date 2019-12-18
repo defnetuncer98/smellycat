@@ -1,6 +1,7 @@
 import * as THREE from './node_modules/three/build/three.module.js';
 import { GLTFLoader } from './node_modules/three/examples/jsm/loaders/GLTFLoader.js';
 import { FBXLoader } from './node_modules/three/examples/jsm/loaders/FBXLoader.js';
+import { DRACOLoader } from './node_modules/three/examples/jsm/loaders/DRACOLoader.js';
 
 //////////////////////////////
 // Global objects
@@ -14,25 +15,54 @@ var moveForward = false;
 var moveBackward = false;
 var moveLeft = false;
 var moveRight = false;
-var canJump = false;
 var velocity = new THREE.Vector3();
 var direction = new THREE.Vector3();
 var prevTime = performance.now();
-var models = [];
-var pos = new THREE.Vector3();
-var quat = new THREE.Quaternion();
-var canJump = false;
 var controls = null;
 var shiftisup = true;
 var idle = true;
-var physicsWorld;
-const gravityConstant = - 9.8;
 var transformAux1;
 var softBodyHelpers;
+var physicsWorld;
+var raycaster = new THREE.Raycaster();
+var ballMaterial = new THREE.MeshPhongMaterial( { color: 0x202020 } );
+var pos = new THREE.Vector3();
+var quat = new THREE.Quaternion();
+var margin = 0.05;
 var rigidBodies = [];
+var softBodies = [];
+const gravityConstant = - 9.8;
 var clickRequest = false;
 var mouseCoords = new THREE.Vector2();
-var margin = 0.05;
+var roomscene = new THREE.Group();
+
+function createRigidBody( threeObject, physicsShape, mass, pos, quat ) {
+        threeObject.position.copy( pos );
+        threeObject.quaternion.copy( quat );
+        var transform = new Ammo.btTransform();
+        transform.setIdentity();
+        transform.setOrigin( new Ammo.btVector3( pos.x, pos.y, pos.z ) );
+        transform.setRotation( new Ammo.btQuaternion( quat.x, quat.y, quat.z, quat.w ) );
+        var motionState = new Ammo.btDefaultMotionState( transform );
+        var localInertia = new Ammo.btVector3( 0, 0, 0 );
+        physicsShape.calculateLocalInertia( mass, localInertia );
+        var rbInfo = new Ammo.btRigidBodyConstructionInfo( mass, motionState, physicsShape, localInertia );
+        var body = new Ammo.btRigidBody( rbInfo );
+        threeObject.userData.physicsBody = body;
+        if ( mass > 0 ) {
+                scene.add( threeObject );
+                rigidBodies.push( threeObject );
+                // Disable deactivation
+                //body.setActivationState( 4 );
+        }
+        else {
+            roomscene.add(threeObject);
+        }
+        //else console.log('no mass mesh');
+        
+        physicsWorld.addRigidBody( body );
+        return body;
+}
 
 //
 //////////////////////////////
@@ -46,15 +76,16 @@ var MODELS = [
             name: "SmellyCat", 
             loader:"fbx",
             path: "./node_modules/three/examples/models/fbx/cat.fbx",
-            position: { x: -10, y: 5, z: -15 }, // Where to put the unit in the scene
+            position: { x: -1.1, y: 1, z: -0.5 }, // Where to put the unit in the scene
             rotation: { x: 0, y: 0, z: 0},
-            scale: 0.007, // Scaling of the unit. 1.0 means: use original size, 0.1 means "10 times smaller", etc.
+            scale: 0.0003, // Scaling of the unit. 1.0 means: use original size, 0.1 means "10 times smaller", etc.
             animationName: 5 // Name of animation to run            
         },    
         {
             name: "BedroomInArles", 
             loader: "gltf",
             path: "./node_modules/three/examples/models/gltf/BedroomInArles/scene.gltf",
+            path: "./node_modules/three/examples/models/gltf/BedroomInArles/noroof.glb",
             position: { x: 0, y: 0, z: 0 }, // Where to put the unit in the scene
             scale: 20, // Scaling of the unit. 1.0 means: use original size, 0.1 means "10 times smaller", etc.
         },            
@@ -91,11 +122,6 @@ var MODELS = [
     */
 ];
 
-//////////////////////////////
-// The main setup happens here
-//////////////////////////////
-
-
 Ammo().then( function ( AmmoLib ) {
     Ammo = AmmoLib;
     init();
@@ -107,6 +133,7 @@ function init() {
     initRenderer();
     initPhysics();
     loadModels();
+    initInput();
 }    
 
 function initPhysics() {
@@ -132,36 +159,6 @@ function initPhysics() {
         transformAux1 = new Ammo.btTransform();
         softBodyHelpers = new Ammo.btSoftBodyHelpers();
 }
-
-function createParalellepiped( sx, sy, sz, mass, pos, quat, material ) {
-        var threeObject = new THREE.Mesh( new THREE.BoxBufferGeometry( sx, sy, sz, 1, 1, 1 ), material );
-        var shape = new Ammo.btBoxShape( new Ammo.btVector3( sx * 0.5, sy * 0.5, sz * 0.5 ) );
-        shape.setMargin( margin );
-        var object = createRigidBody( threeObject, shape, mass, pos, quat );
-        return object;
-}
-function createRigidBody( threeObject, physicsShape, mass, pos, quat ) {
-        threeObject.position.copy( pos );
-        threeObject.quaternion.copy( quat );
-        var transform = new Ammo.btTransform();
-        transform.setIdentity();
-        transform.setOrigin( new Ammo.btVector3( pos.x, pos.y, pos.z ) );
-        transform.setRotation( new Ammo.btQuaternion( quat.x, quat.y, quat.z, quat.w ) );
-        var motionState = new Ammo.btDefaultMotionState( transform );
-        var localInertia = new Ammo.btVector3( 0, 0, 0 );
-        physicsShape.calculateLocalInertia( mass, localInertia );
-        var rbInfo = new Ammo.btRigidBodyConstructionInfo( mass, motionState, physicsShape, localInertia );
-        var body = new Ammo.btRigidBody( rbInfo );
-        threeObject.userData.physicsBody = body;
-        scene.add( threeObject );
-        if ( mass > 0 ) {
-                rigidBodies.push( threeObject );
-                // Disable deactivation
-                body.setActivationState( 4 );
-        }
-        physicsWorld.addRigidBody( body );
-        return body;
-}
 //////////////////////////////
 //////////////////////////////
 // Function implementations
@@ -177,13 +174,19 @@ function loadModels() {
                 if(m.loader==="fbx") loadFBXModel( m );
                 else loadGLTFModel( m );
         }
-        pos.set( 0, 0, 0 );
+        pos.set( 0, -0.6, 0 );
         quat.set( 0, 0, 0, 1 );
-        var ground = createParalellepiped( 100, 1, 100, 0, pos, quat, new THREE.MeshPhongMaterial( {color:'#000000'} ) );
+        var ground = createParalellepiped( 100, 1, 100, 0, pos, quat, new THREE.MeshPhongMaterial( {color:'#808080'} ) );
         ground.castShadow = true;
-        ground.receiveShadow = true;    
-                                console.log(rigidBodies);
+        ground.receiveShadow = true;        
+}
 
+function createParalellepiped( sx, sy, sz, mass, pos, quat, material ) {
+        var threeObject = new THREE.Mesh( new THREE.BoxBufferGeometry( sx, sy, sz, 1, 1, 1 ), material );
+        var shape = new Ammo.btBoxShape( new Ammo.btVector3( sx * 0.5, sy * 0.5, sz * 0.5 ) );
+        shape.setMargin( margin );
+        createRigidBody( threeObject, shape, mass, pos, quat );
+        return threeObject;
 }
 
 /**
@@ -221,31 +224,84 @@ function getModelByName( name ) {
 
 function loadGLTFModel( model ) {
         var loader = new GLTFLoader();
+	//var dracoLoader = new DRACOLoader();
+	//dracoLoader.setDecoderPath( './node_modules/three/examples/js/libs/draco/gltf/' );
+        //loader.setDRACOLoader( dracoLoader );        
         loader.load( model.path, function ( gltf ) {
                 // Enable Shadows
                 var gltfscene = gltf.scene;
-                gltf.scene.traverse( function ( object ) {
-                        if ( object.isMesh ) {
-                                object.castShadow = true;
+                console.log(gltf.scene);
+                var yey = [];
+                var i=0;
+                console.log(gltf.scene);
+                gltfscene.traverse( function ( object ) {
+                        if ( object.isMesh) {
+                            object.castShadow = true;
+                            object.receiveShadow = true; 
+                            yey.push(object);
                         }
+                        i++;
                 } );
-                // Different models can have different configurations of armatures and meshes. Therefore,
-                // We can't set position, scale or rotation to individual mesh objects. Instead we set
-                // it to the whole cloned scene and then add the whole scene to the game world
-                // Note: this may have weird effects if you have lights or other items in the GLTF file's scene!
-                if ( model.position ) {
-                        gltfscene.position.copy(  new THREE.Vector3( model.position.x, model.position.y, model.position.z ));
+                var i = 0;
+                
+                yey.forEach( function (object) {
+                    var objecttemp = object;
+                    
+                    var width = (objecttemp.geometry.boundingBox.max.x - objecttemp.geometry.boundingBox.min.x);
+                    var height = (objecttemp.geometry.boundingBox.max.y - objecttemp.geometry.boundingBox.min.y);
+                    var depth = (objecttemp.geometry.boundingBox.max.z - objecttemp.geometry.boundingBox.min.z);
+                    console.log(object.geometry.boundingBox);
+                    console.log('width: '+width, 'height: '+height, 'depth: '+depth);
+
+
+//                    objecttemp.geometry.computeBoundingBox();
+//                    var width = (objecttemp.geometry.boundingBox.max.x - objecttemp.geometry.boundingBox.min.x);
+//                    var height = (objecttemp.geometry.boundingBox.max.y - objecttemp.geometry.boundingBox.min.y);
+//                    var depth = (objecttemp.geometry.boundingBox.max.z - objecttemp.geometry.boundingBox.min.z);
+//                    console.log(objecttemp.geometry.boundingBox);
+//                    console.log('width: '+width, 'height: '+height, 'depth: '+depth);
+//
+                                        
+//                    var helper = new THREE.BoxHelper(object);
+//                    helper.geometry.computeBoundingBox();
+//                    var width = (helper.geometry.boundingBox.max.x - helper.geometry.boundingBox.min.x);
+//                    var height = (helper.geometry.boundingBox.max.y - helper.geometry.boundingBox.min.y);
+//                    var depth = (helper.geometry.boundingBox.max.z - helper.geometry.boundingBox.min.z);
+//                    console.log(helper.geometry.boundingBox);
+//                    console.log('width: '+width, 'height: '+height, 'depth: '+depth);                    
+////                    
+//                    var boundingBox = new THREE.Box3();
+//                    boundingBox.copy(objecttemp.geometry.boundingBox);
+//                    objecttemp.updateMatrixWorld(true);
+//                    boundingBox.applyMatrix4(object.matrixWorld);
+//                    var width = boundingBox.max.x - boundingBox.min.x;
+//                    var height = boundingBox.max.y - boundingBox.min.y;
+//                    var depth = boundingBox.max.z - boundingBox.min.z;
+                    //console.log(objecttemp.geometry.boundingBox);
+                    //console.log('width: '+width, 'height: '+height, 'depth: '+depth);
+
+                    //console.log("whaa");
+                    
+                    
+                    var ballMass = width.toFixed(2)*height.toFixed(2)*depth.toFixed(2);
+                    //var ballMass = 1;
+                    var ballMass=0;
+                    if(i!=18 && i!=19 && i!=4 && i!=21){
+                        var ballShape = new Ammo.btBoxShape( new Ammo.btVector3( width, height, depth ) );
+                        ballShape.setMargin( 0.0 );
+                        var ballBody = createRigidBody( objecttemp, ballShape, ballMass, objecttemp.position, objecttemp.quaternion );
+                        //ballBody.setFriction( 0.5 );
+                        console.log(i);
                 }
-                if ( model.scale ) {
-                        gltfscene.scale.copy(  new THREE.Vector3( model.scale, model.scale, model.scale ));
-                }
-                if ( model.rotation ) {
-                        gltfscene.rotation.copy( new THREE.Euler( model.rotation.x,model.rotation.y,model.rotation.z));
-                }
-                //startAnimation( gltfscene, gltf.animations, model.animationName );
-                scene.add( gltfscene );
-                models.push( gltfscene );
+                    //19 wallnew
+                    //18 wall2
+                    //4 outside picture
+                    //21 ground
+                    i++;
+                });
+            
                 console.log( "Done loading model", model.name );
+                scene.add(roomscene);
                 } );
 }
 
@@ -276,20 +332,16 @@ function loadFBXModel( model ) {
                         gltf.rotation.copy( new THREE.Euler( model.rotation.x,model.rotation.y,model.rotation.z));
                 }
                 startAnimation( gltf, gltf.animations, model.animationName );
-                scene.add( gltf );
-                models.push( gltf );
+                var ballMass = 5
+                var ballShape = new Ammo.btBoxShape( new Ammo.btVector3( 0.1,0.1,0.2 ) );
+                ballShape.setMargin( 0.0 );
+                var body = createRigidBody( gltf, ballShape, ballMass, gltf.position, gltf.quaternion );
+                body.setFriction( 0.1 );
+                body.setActivationState( 4 );
                 console.log( "Done loading model", model.name );
-             
-                var invisiblebox = createParalellepiped( 1, 1, 2, 3, gltf.position, gltf.quaternion, new THREE.MeshPhongMaterial( { color: 0xFFFFFF } ) );
-                invisiblebox.setFriction(0.5);
-                console.log('yey');
-                pos.set( -10, 5, -5 );
-                quat.set( 0, 0, 0, 1 );
-                var xsdasd = createParalellepiped( 5, 5, 5, 3, pos, quat, new THREE.MeshPhongMaterial( { color: 0xFFFFFF } ) );
-                xsdasd.setFriction(0.5);
-
+                controls = new ThirdPersonControls( rigidBodies[0], renderer.domElement );       
+                
         } );
-                //friction = 1 dont move
 }
 /**
  * Render loop. Renders the next frame of all animations
@@ -329,19 +381,8 @@ function animate() {
 //        }
         
         if(!idle) mixers[0].update(delta);
-        
-        if(models.length==1){
-            controls = new ThirdPersonControls( models[0], renderer.domElement );
-            controls.movementSpeed = 5;
-            controls.lookSpeed = 0.1;
-            controls.constrainVertical = true;
-            controls.verticalMax = 2.1;
-            controls.verticalMin = 1.9;
-            controls.constrainHorizontal = true;
-            controls.horizontalMax = 5;
-            controls.horizontalMin = 4.5;            
-        }
-        else if(models.length>1){
+
+        if(rigidBodies.length>1){
             controls.update( delta );            
         }
         
@@ -351,9 +392,12 @@ function animate() {
         //var theta = Math.atan2(vector.x,vector.z);
         //models[0].rotation.copy(  new THREE.Euler(theta, 0, theta ));
         //scene.add(models[0]);        
+        //updatePhysics( delta );
+	processClick();
         requestAnimationFrame( animate );
         renderer.render( scene, camera );
 }
+
 //////////////////////////////
 // General Three.JS stuff
 //////////////////////////////
@@ -379,7 +423,8 @@ function initRenderer() {
  */
 function initScene() {
         camera = new THREE.PerspectiveCamera( 45, window.innerWidth / window.innerHeight, 1, 10000 );
-        camera.position.set( 30, 30, -10 );
+        camera.position.set( 0, 10, 0 );
+        camera.lookAt(0,0,0);
         clock = new THREE.Clock();
         scene = new THREE.Scene();
       
@@ -398,20 +443,6 @@ function initScene() {
         dirLight.shadow.camera.near = 0.1;
         dirLight.shadow.camera.far = 40;
         scene.add( dirLight );
-        // ground
-//        
-//        var groundMesh = new THREE.Mesh(
-//                new THREE.PlaneBufferGeometry( 40, 40 ),
-//                new THREE.MeshPhongMaterial( {
-//                        color: 0x999999,
-//                        depthWrite: false
-//                } )
-//        );
-//    
-//        groundMesh.rotation.x = - Math.PI / 2;
-//        groundMesh.receiveShadow = true;
-//        scene.add( groundMesh );
-//    
         window.addEventListener( 'resize', onWindowResize, false );
         var axesHelper = new THREE.AxesHelper( 100 );
         scene.add( axesHelper );
@@ -436,8 +467,6 @@ function ThirdPersonControls ( object, domElement ) {
 
 	this.enabled = true;
 
-	this.movementSpeed = 1.0;
-	this.lookSpeed = 0.005;
 	this.lookVertical = true;
 	this.autoForward = false;
 
@@ -448,14 +477,17 @@ function ThirdPersonControls ( object, domElement ) {
 	this.heightMin = 0.0;
 	this.heightMax = 1.0;
 
-	this.constrainVertical = false;
-	this.verticalMin = 0;
-	this.verticalMax = Math.PI;
+        this.movementSpeed = 80;
+        this.lookSpeed = 0.1;
 
-	this.constrainHorizontal = false;
-	this.horizontalMin = 0;
-	this.horizontalMax = Math.PI;
+        this.constrainVertical = true;
+        this.verticalMax = 2.1; //default Math.PI
+        this.verticalMin = 1.9; //default 0
         
+        this.constrainHorizontal = true;
+        this.horizontalMax = 5;
+        this.horizontalMin = 4.5;       
+    
 	this.mouseDragOn = false;
 
 	// internals
@@ -506,29 +538,49 @@ function ThirdPersonControls ( object, domElement ) {
 	};
 /*
 	this.onMouseDown = function ( event ) {
+
 		if ( this.domElement !== document ) {
+
 			this.domElement.focus();
+
 		}
+
 		event.preventDefault();
 		event.stopPropagation();
+
 		if ( this.activeLook ) {
+
 			switch ( event.button ) {
+
 				case 0: this.moveForward = true; break;
 				case 2: this.moveBackward = true; break;
+
 			}
+
 		}
+
 		this.mouseDragOn = true;
+
 	};
+
 	this.onMouseUp = function ( event ) {
+
 		event.preventDefault();
 		event.stopPropagation();
+
 		if ( this.activeLook ) {
+
 			switch ( event.button ) {
+
 				case 0: this.moveForward = false; break;
 				case 2: this.moveBackward = false; break;
+
 			}
+
 		}
+
 		this.mouseDragOn = false;
+
 	};
 */
 	this.onMouseMove = function ( event ) {
@@ -666,31 +718,32 @@ function ThirdPersonControls ( object, domElement ) {
 				theta = THREE.Math.mapLinear( theta, 0, Math.PI, this.horizontalMin, this.horizontalMax );
 			}
 
-			if ( this.moveForward || ( this.autoForward && ! this.moveBackward ) ) {
-                            idle=false;
-                            this.object.translateZ( - ( actualMoveSpeed + this.autoSpeedFactor ) );
+			if ( this.moveForward || ( this.autoForward && ! this.moveBackward ) ) { //S
+                            idle=false;                            
+                            this.object.userData.physicsBody.setLinearVelocity(new Ammo.btVector3( 0, 0, -actualMoveSpeed));
+                            
+                            //this.object.translateZ( - ( actualMoveSpeed + this.autoSpeedFactor ) );
                             //camera.lookAt(this.object.position);
                         }
-			else if ( this.moveBackward ) {
+			else if ( this.moveBackward ) { //W
                             idle=false;
-                            this.object.translateZ( actualMoveSpeed );
+                            var tempVec = new THREE.Vector3();
+                            tempVec.set( 0,0, -10);
+                            //this.object.localToWorld(tempVec);
+                            this.object.userData.physicsBody.setLinearVelocity(new Ammo.btVector3( 0, 0, actualMoveSpeed));
+                            //this.object.userData.physicsBody.setLinearVelocity( new Ammo.btVector3( 0, 0, - ( actualMoveSpeed + this.autoSpeedFactor ) ) );
+                            
+                            //this.object.translateZ( actualMoveSpeed );
                             //camera.lookAt(this.object.position);
                         }
                         else{
                             idle=true;
+                            this.object.userData.physicsBody.setLinearVelocity(new Ammo.btVector3( 0, 0, 0));                            
                             //camera.lookAt(this.object.position);
                         }
-                        camera.position.copy(new THREE.Vector3(this.object.position.x+15,this.object.position.y+10,this.object.position.z));                        
-                        camera.lookAt(new THREE.Vector3().setFromSphericalCoords( 1, phi, theta ).add( camera.position ));
-                            
-                        this.object.rotation.y = 4.4+(-this.mouseX*0.001);
                         
-                    
-                        //rotateAboutPoint(models[1], this.object.position, new THREE.Vector3(0,1,0).normalize(), this.mouseDeltaX*0.00005*Math.abs(this.mouseX), true);
-                        this.mouseDeltaX=0.0;
-                        this.mouseDeltaY=0.0;
                         
-                         // Step world
+                                // Step world
                         physicsWorld.stepSimulation( delta, 10 );
                         // Update rigid bodies
                         for ( var i = 0, il = rigidBodies.length; i < il; i ++ ) {
@@ -702,23 +755,28 @@ function ThirdPersonControls ( object, domElement ) {
                                         var p = transformAux1.getOrigin();
                                         var q = transformAux1.getRotation();
                                         objThree.position.set( p.x(), p.y(), p.z() );
-                                        objThree.quaternion.set( q.x(), q.y(), q.z(), q.w() );                                        
+                                        objThree.quaternion.set( q.x(), q.y(), q.z(), q.w() );
                                 }
                         }                        
+                        camera.position.copy(new THREE.Vector3(this.object.position.x,this.object.position.y+1,this.object.position.z-1.5));
+                        camera.lookAt(this.object.position);
+                        //camera.lookAt(new THREE.Vector3().setFromSphericalCoords( 1, phi, theta ).add( camera.position ));
+                                     
+                        //this.object.rotation.y = 4.4+(-this.mouseX*0.001);
                         
+                        rotateAboutPoint(roomscene, this.object.position, new THREE.Vector3(0,1,0).normalize(), this.mouseDeltaX*0.000005*Math.abs(this.mouseX), true);
+                        this.mouseDeltaX=0.0;
+                        this.mouseDeltaY=0.0;
 		};
-
 	}();
 
 	function contextmenu( event ) {
-
 		event.preventDefault();
-
 	}
 
 	var _onMouseMove = bind( this, this.onMouseMove );
-//	var _onMouseDown = bind( this, this.onMouseDown );
-//	var _onMouseUp = bind( this, this.onMouseUp );
+	var _onMouseDown = bind( this, this.onMouseDown );
+	var _onMouseUp = bind( this, this.onMouseUp );
 	var _onKeyDown = bind( this, this.onKeyDown );
 	var _onKeyUp = bind( this, this.onKeyUp );
 
@@ -728,16 +786,12 @@ function ThirdPersonControls ( object, domElement ) {
 	//this.domElement.addEventListener( 'mouseup', _onMouseUp, false );
 
 	window.addEventListener( 'keydown', _onKeyDown, false );
-		window.addEventListener( 'keyup', _onKeyUp, false );
+	window.addEventListener( 'keyup', _onKeyUp, false );
 
 	function bind( scope, fn ) {
-
 		return function () {
-
 			fn.apply( scope, arguments );
-
 		};
-
 	}
 
 	function setOrientation( ) {
@@ -757,3 +811,38 @@ function ThirdPersonControls ( object, domElement ) {
 	setOrientation( );
 
 };
+
+function initInput() {
+        window.addEventListener( 'mousedown', function ( event ) {
+                if ( ! clickRequest ) {
+                        mouseCoords.set(
+                                ( event.clientX / window.innerWidth ) * 2 - 1,
+                                - ( event.clientY / window.innerHeight ) * 2 + 1
+                        );
+                        clickRequest = true;
+                }
+        }, false );
+}
+function processClick() {
+        if ( clickRequest ) {
+                raycaster.setFromCamera( mouseCoords, camera );
+                // Creates a ball
+                var ballMass = 1;
+                var ballRadius = 0.4;
+                var ball = new THREE.Mesh( new THREE.SphereBufferGeometry( ballRadius, 18, 16 ), ballMaterial );
+                ball.castShadow = true;
+                ball.receiveShadow = true;
+                var ballShape = new Ammo.btSphereShape( ballRadius );
+                ballShape.setMargin( margin );
+                pos.copy( raycaster.ray.direction );
+                pos.add( raycaster.ray.origin );
+                quat.set( 0, 0, 0, 1 );
+                var ballBody = createRigidBody( ball, ballShape, ballMass, pos, quat );
+                ballBody.setFriction( 0.5 );
+                ballBody.setActivationState( 4 );                
+                pos.copy( raycaster.ray.direction );
+                pos.multiplyScalar( 14 );
+                ballBody.setLinearVelocity( new Ammo.btVector3( pos.x, pos.y, pos.z ) );
+                clickRequest = false;
+        }
+}
