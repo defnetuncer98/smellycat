@@ -6,6 +6,7 @@ import { DRACOLoader } from './node_modules/three/examples/jsm/loaders/DRACOLoad
 //////////////////////////////
 // Global objects
 //////////////////////////////
+var space = false;
 var scene = null; // THREE.Scene where it all will be rendered
 var renderer = null;
 var camera = null;
@@ -49,6 +50,8 @@ function createRigidBody( threeObject, physicsShape, mass, pos, quat ) {
         var rbInfo = new Ammo.btRigidBodyConstructionInfo( mass, motionState, physicsShape, localInertia );
         var body = new Ammo.btRigidBody( rbInfo );
         threeObject.userData.physicsBody = body;
+        threeObject.castShadow = true;
+        threeObject.receiveShadow = true;         
         if ( mass > 0 ) {
                 scene.add( threeObject );
                 rigidBodies.push( threeObject );
@@ -76,7 +79,8 @@ var MODELS = [
             name: "SmellyCat", 
             loader:"fbx",
             path: "./node_modules/three/examples/models/fbx/cat.fbx",
-            position: { x: -1.1, y: 1, z: -0.5 }, // Where to put the unit in the scene
+            //position: { x: -1.1, y: 1, z: -0.5 }, //on the chair
+            position: { x: 1, y: 1, z: -1 }, //on the bed
             rotation: { x: 0, y: 0, z: 0},
             scale: 0.0003, // Scaling of the unit. 1.0 means: use original size, 0.1 means "10 times smaller", etc.
             animationName: 5 // Name of animation to run            
@@ -86,6 +90,7 @@ var MODELS = [
             loader: "gltf",
             path: "./node_modules/three/examples/models/gltf/BedroomInArles/scene.gltf",
             path: "./node_modules/three/examples/models/gltf/BedroomInArles/noroof.glb",
+            path: "./node_modules/three/examples/models/gltf/BedroomInArles/splitobjects.glb",
             position: { x: 0, y: 0, z: 0 }, // Where to put the unit in the scene
             scale: 20, // Scaling of the unit. 1.0 means: use original size, 0.1 means "10 times smaller", etc.
         },            
@@ -236,8 +241,6 @@ function loadGLTFModel( model ) {
                 console.log(gltf.scene);
                 gltfscene.traverse( function ( object ) {
                         if ( object.isMesh) {
-                            object.castShadow = true;
-                            object.receiveShadow = true; 
                             yey.push(object);
                         }
                         i++;
@@ -283,16 +286,20 @@ function loadGLTFModel( model ) {
                     //console.log("whaa");
                     
                     
-                    var ballMass = width.toFixed(2)*height.toFixed(2)*depth.toFixed(2);
+                    //var ballMass = width.toFixed(2)*height.toFixed(2)*depth.toFixed(2);
                     //var ballMass = 1;
                     var ballMass=0;
-                    if(i!=18 && i!=19 && i!=4 && i!=21){
+                    //if(i!=24 && i!=25){
+                    if(depth<3.5){
                         var ballShape = new Ammo.btBoxShape( new Ammo.btVector3( width, height, depth ) );
                         ballShape.setMargin( 0.0 );
                         var ballBody = createRigidBody( objecttemp, ballShape, ballMass, objecttemp.position, objecttemp.quaternion );
-                        //ballBody.setFriction( 0.5 );
+                        ballBody.setFriction( 0.5 );
                         console.log(i);
-                }
+                    }
+                    else{
+                        roomscene.add(objecttemp);
+                    }
                     //19 wallnew
                     //18 wall2
                     //4 outside picture
@@ -332,11 +339,11 @@ function loadFBXModel( model ) {
                         gltf.rotation.copy( new THREE.Euler( model.rotation.x,model.rotation.y,model.rotation.z));
                 }
                 startAnimation( gltf, gltf.animations, model.animationName );
-                var ballMass = 5
-                var ballShape = new Ammo.btBoxShape( new Ammo.btVector3( 0.1,0.1,0.2 ) );
+                var ballMass = 10
+                var ballShape = new Ammo.btBoxShape( new Ammo.btVector3( 0.1,0.1,0.4 )  );
                 ballShape.setMargin( 0.0 );
                 var body = createRigidBody( gltf, ballShape, ballMass, gltf.position, gltf.quaternion );
-                body.setFriction( 0.1 );
+                body.setFriction( 0.5 );
                 body.setActivationState( 4 );
                 console.log( "Done loading model", model.name );
                 controls = new ThirdPersonControls( rigidBodies[0], renderer.domElement );       
@@ -477,7 +484,7 @@ function ThirdPersonControls ( object, domElement ) {
 	this.heightMin = 0.0;
 	this.heightMax = 1.0;
 
-        this.movementSpeed = 80;
+        this.movementSpeed = 20;
         this.lookSpeed = 0.1;
 
         this.constrainVertical = true;
@@ -619,6 +626,7 @@ function ThirdPersonControls ( object, domElement ) {
 //			case 70: /*F*/ this.moveDown = true; break;
 
                         case 16: /*Shift*/ shiftisup = false; break;
+                        case 32: /*Space*/ space = true; break;
                             
 
 		}
@@ -645,7 +653,6 @@ function ThirdPersonControls ( object, domElement ) {
 //			case 70: /*F*/ this.moveDown = false; break;
                         
                         case 16: /*Shift*/ shiftisup = true; break;
-
 		}
 
 	};
@@ -722,26 +729,25 @@ function ThirdPersonControls ( object, domElement ) {
                             idle=false;                            
                             this.object.userData.physicsBody.setLinearVelocity(new Ammo.btVector3( 0, 0, -actualMoveSpeed));
                             
-                            //this.object.translateZ( - ( actualMoveSpeed + this.autoSpeedFactor ) );
+                            //this.object.translateZ( - ( actualMoveSpeed ) );
                             //camera.lookAt(this.object.position);
                         }
 			else if ( this.moveBackward ) { //W
                             idle=false;
-                            var tempVec = new THREE.Vector3();
-                            tempVec.set( 0,0, -10);
-                            //this.object.localToWorld(tempVec);
                             this.object.userData.physicsBody.setLinearVelocity(new Ammo.btVector3( 0, 0, actualMoveSpeed));
-                            //this.object.userData.physicsBody.setLinearVelocity( new Ammo.btVector3( 0, 0, - ( actualMoveSpeed + this.autoSpeedFactor ) ) );
                             
                             //this.object.translateZ( actualMoveSpeed );
-                            //camera.lookAt(this.object.position);
                         }
                         else{
                             idle=true;
                             this.object.userData.physicsBody.setLinearVelocity(new Ammo.btVector3( 0, 0, 0));                            
-                            //camera.lookAt(this.object.position);
                         }
                         
+                    
+                        if(space) {
+                            this.object.userData.physicsBody.setLinearVelocity(new Ammo.btVector3( 0, actualMoveSpeed*5, 0));                            
+                            space=false;
+                        }                        
                         
                                 // Step world
                         physicsWorld.stepSimulation( delta, 10 );
@@ -756,6 +762,7 @@ function ThirdPersonControls ( object, domElement ) {
                                         var q = transformAux1.getRotation();
                                         objThree.position.set( p.x(), p.y(), p.z() );
                                         objThree.quaternion.set( q.x(), q.y(), q.z(), q.w() );
+                                        objThree.rotation.y = 0.44+(-this.mouseX*0.001);
                                 }
                         }                        
                         camera.position.copy(new THREE.Vector3(this.object.position.x,this.object.position.y+1,this.object.position.z-1.5));
@@ -828,7 +835,7 @@ function processClick() {
                 raycaster.setFromCamera( mouseCoords, camera );
                 // Creates a ball
                 var ballMass = 1;
-                var ballRadius = 0.4;
+                var ballRadius = 0.05;
                 var ball = new THREE.Mesh( new THREE.SphereBufferGeometry( ballRadius, 18, 16 ), ballMaterial );
                 ball.castShadow = true;
                 ball.receiveShadow = true;
@@ -841,7 +848,7 @@ function processClick() {
                 ballBody.setFriction( 0.5 );
                 ballBody.setActivationState( 4 );                
                 pos.copy( raycaster.ray.direction );
-                pos.multiplyScalar( 14 );
+                pos.multiplyScalar( 1 );
                 ballBody.setLinearVelocity( new Ammo.btVector3( pos.x, pos.y, pos.z ) );
                 clickRequest = false;
         }
