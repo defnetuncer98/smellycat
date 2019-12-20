@@ -484,7 +484,7 @@ function ThirdPersonControls ( object, domElement ) {
 	this.heightMin = 0.0;
 	this.heightMax = 1.0;
 
-        this.movementSpeed = 20;
+        this.movementSpeed = 5;
         this.lookSpeed = 0.1;
 
         this.constrainVertical = true;
@@ -611,16 +611,16 @@ function ThirdPersonControls ( object, domElement ) {
 		switch ( event.keyCode ) {
 
 			case 38: /*up*/
-			case 87: /*W*/ this.moveBackward = true; break;
+			case 87: /*W*/ this.moveForward = true; break;
 
-//			case 37: /*left*/
-//			case 65: /*A*/ this.moveRight = true; break;
+			case 37: /*left*/
+			case 65: /*A*/ this.moveRight = true; break;
 
 			case 40: /*down*/
-			case 83: /*S*/ this.moveForward = true; break;
+			case 83: /*S*/ this.moveBackward = true; break;
 
-//			case 39: /*right*/
-//			case 68: /*D*/ this.moveLeft = true; break;
+			case 39: /*right*/
+			case 68: /*D*/ this.moveLeft = true; break;
 
 //			case 82: /*R*/ this.moveUp = true; break;
 //			case 70: /*F*/ this.moveDown = true; break;
@@ -638,16 +638,16 @@ function ThirdPersonControls ( object, domElement ) {
 		switch ( event.keyCode ) {
 
 			case 38: /*up*/
-			case 87: /*W*/ this.moveBackward = false; break;
+			case 87: /*W*/ this.moveForward = false; break;
 
-//			case 37: /*left*/
-//			case 65: /*A*/ this.moveRight = false; break;
+			case 37: /*left*/
+			case 65: /*A*/ this.moveRight = false; break;
 
 			case 40: /*down*/
-			case 83: /*S*/ this.moveForward = false; break;
+			case 83: /*S*/ this.moveBackward = false; break;
 
-//			case 39: /*right*/
-//			case 68: /*D*/ this.moveLeft = false; break;
+			case 39: /*right*/
+			case 68: /*D*/ this.moveLeft = false; break;
 
 //			case 82: /*R*/ this.moveUp = false; break;
 //			case 70: /*F*/ this.moveDown = false; break;
@@ -725,31 +725,50 @@ function ThirdPersonControls ( object, domElement ) {
 				theta = THREE.Math.mapLinear( theta, 0, Math.PI, this.horizontalMin, this.horizontalMax );
 			}
 
-			if ( this.moveForward || ( this.autoForward && ! this.moveBackward ) ) { //S
-                            idle=false;                            
-                            this.object.userData.physicsBody.setLinearVelocity(new Ammo.btVector3( 0, 0, -actualMoveSpeed));
+                        var velox=0;
+                        var veloz=0;
+                        var rotay=1;
+                        
+                        if ( this.moveLeft) { //A
+                            idle=false; 
+                            velox = -actualMoveSpeed;
+                        }
+			else if ( this.moveRight ) { //D
+                            idle=false;
+                            velox = actualMoveSpeed;
+                        }
+                        else {
+                            idle=true;
+                        }
+
+			if ( this.moveBackward) { //S
+                            idle=false; 
+                            veloz = -actualMoveSpeed;
+                            //this.object.userData.physicsBody.setLinearVelocity(new Ammo.btVector3( 0, 0, -actualMoveSpeed));
                             
                             //this.object.translateZ( - ( actualMoveSpeed ) );
                             //camera.lookAt(this.object.position);
                         }
-			else if ( this.moveBackward ) { //W
+			else if ( this.moveForward ) { //W
                             idle=false;
-                            this.object.userData.physicsBody.setLinearVelocity(new Ammo.btVector3( 0, 0, actualMoveSpeed));
+                            veloz = actualMoveSpeed;
+                            //this.object.userData.physicsBody.setLinearVelocity(new Ammo.btVector3( 0, 0, actualMoveSpeed));
                             
                             //this.object.translateZ( actualMoveSpeed );
                         }
                         else{
-                            idle=true;
-                            this.object.userData.physicsBody.setLinearVelocity(new Ammo.btVector3( 0, 0, 0));                            
+                            if(!this.moveLeft && !this.moveRight) idle=true;
+                            //this.object.userData.physicsBody.setLinearVelocity(new Ammo.btVector3( 0, 0, 0));                            
                         }
                         
+                        this.object.userData.physicsBody.setLinearVelocity(new Ammo.btVector3( velox, 0, veloz));                        
                     
                         if(space) {
                             this.object.userData.physicsBody.setLinearVelocity(new Ammo.btVector3( 0, actualMoveSpeed*5, 0));                            
                             space=false;
                         }                        
                         
-                                // Step world
+                        // Step world
                         physicsWorld.stepSimulation( delta, 10 );
                         // Update rigid bodies
                         for ( var i = 0, il = rigidBodies.length; i < il; i ++ ) {
@@ -762,7 +781,7 @@ function ThirdPersonControls ( object, domElement ) {
                                         var q = transformAux1.getRotation();
                                         objThree.position.set( p.x(), p.y(), p.z() );
                                         objThree.quaternion.set( q.x(), q.y(), q.z(), q.w() );
-                                        objThree.rotation.y = 0.44+(-this.mouseX*0.001);
+                                        objThree.rotation.y = 0.44+(-this.mouseX*0.001*rotay);
                                 }
                         }                        
                         camera.position.copy(new THREE.Vector3(this.object.position.x,this.object.position.y+1,this.object.position.z-1.5));
