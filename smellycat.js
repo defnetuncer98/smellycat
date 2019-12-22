@@ -1,7 +1,6 @@
 import * as THREE from './node_modules/three/build/three.module.js';
 import { GLTFLoader } from './node_modules/three/examples/jsm/loaders/GLTFLoader.js';
 import { FBXLoader } from './node_modules/three/examples/jsm/loaders/FBXLoader.js';
-import { DRACOLoader } from './node_modules/three/examples/jsm/loaders/DRACOLoader.js';
 
 //////////////////////////////
 // Global objects
@@ -30,12 +29,12 @@ var ballMaterial = new THREE.MeshPhongMaterial( { color: 0x202020 } );
 var pos = new THREE.Vector3();
 var quat = new THREE.Quaternion();
 var margin = 0.05;
-var rigidBodies = [];
+var rigidBodies = [];  // hold cat in the first index, and rest is balls
 var softBodies = [];
 const gravityConstant = - 9.8;
 var clickRequest = false;
 var mouseCoords = new THREE.Vector2();
-var roomscene = new THREE.Group();
+var roomscene = new THREE.Group();  // all room is in here
 
 function createRigidBody( threeObject, physicsShape, mass, pos, quat ) {
         threeObject.position.copy( pos );
@@ -88,43 +87,10 @@ var MODELS = [
         {
             name: "BedroomInArles", 
             loader: "gltf",
-            path: "./node_modules/three/examples/models/gltf/BedroomInArles/scene.gltf",
-            path: "./node_modules/three/examples/models/gltf/BedroomInArles/noroof.glb",
             path: "./node_modules/three/examples/models/gltf/BedroomInArles/splitobjects.glb",
             position: { x: 0, y: 0, z: 0 }, // Where to put the unit in the scene
             scale: 20, // Scaling of the unit. 1.0 means: use original size, 0.1 means "10 times smaller", etc.
-        },            
-/*    
-        { 
-            name: "Bot", 
-            path: "./node_modules/three/examples/models/gltf/sketchbot/scene.gltf",
-            modelName: "Bot",
-            meshName: "bot",
-            position: { x: 0, y: 0, z: 0 },
-            scale: 0.2,
-            animationName: "Love"            
         },
-    
-        { 
-            name: "Soldier", 
-            path: "./node_modules/three/examples/models/gltf/Soldier.glb",
-            modelName: "Soldier", // Will use the 3D model from file models/gltf/Soldier.glb
-            meshName: "vanguard_Mesh", // Name of the main mesh to animate
-            position: { x: 0, y: 0, z: 0 }, // Where to put the unit in the scene
-            scale: 2, // Scaling of the unit. 1.0 means: use original size, 0.1 means "10 times smaller", etc.
-            animationName: "Run" // Name of animation to run            
-        },
-        { 
-            name: "Parrot", 
-            path: "./node_modules/three/examples/models/gltf/Parrot.glb",
-            modelName: "Parrot",
-            meshName: "mesh_0",
-            position: { x: - 2, y: 4, z: 0 },
-            rotation: { x: 0, y: Math.PI, z: 0 },
-            scale: 0.012,
-            animationName: "parrot_A_"            
-        },
-    */
 ];
 
 Ammo().then( function ( AmmoLib ) {
@@ -228,10 +194,7 @@ function getModelByName( name ) {
 }
 
 function loadGLTFModel( model ) {
-        var loader = new GLTFLoader();
-	//var dracoLoader = new DRACOLoader();
-	//dracoLoader.setDecoderPath( './node_modules/three/examples/js/libs/draco/gltf/' );
-        //loader.setDRACOLoader( dracoLoader );        
+        var loader = new GLTFLoader(); 
         loader.load( model.path, function ( gltf ) {
                 // Enable Shadows
                 var gltfscene = gltf.scene;
@@ -250,29 +213,24 @@ function loadGLTFModel( model ) {
                 yey.forEach( function (object) {
                     var objecttemp = object;
                     
+                    //this
                     var width = (objecttemp.geometry.boundingBox.max.x - objecttemp.geometry.boundingBox.min.x);
                     var height = (objecttemp.geometry.boundingBox.max.y - objecttemp.geometry.boundingBox.min.y);
                     var depth = (objecttemp.geometry.boundingBox.max.z - objecttemp.geometry.boundingBox.min.z);
                     console.log(object.geometry.boundingBox);
                     console.log('width: '+width, 'height: '+height, 'depth: '+depth);
 
-
-//                    objecttemp.geometry.computeBoundingBox();
-//                    var width = (objecttemp.geometry.boundingBox.max.x - objecttemp.geometry.boundingBox.min.x);
-//                    var height = (objecttemp.geometry.boundingBox.max.y - objecttemp.geometry.boundingBox.min.y);
-//                    var depth = (objecttemp.geometry.boundingBox.max.z - objecttemp.geometry.boundingBox.min.z);
-//                    console.log(objecttemp.geometry.boundingBox);
-//                    console.log('width: '+width, 'height: '+height, 'depth: '+depth);
-//
-                                        
-//                    var helper = new THREE.BoxHelper(object);
-//                    helper.geometry.computeBoundingBox();
-//                    var width = (helper.geometry.boundingBox.max.x - helper.geometry.boundingBox.min.x);
-//                    var height = (helper.geometry.boundingBox.max.y - helper.geometry.boundingBox.min.y);
-//                    var depth = (helper.geometry.boundingBox.max.z - helper.geometry.boundingBox.min.z);
-//                    console.log(helper.geometry.boundingBox);
-//                    console.log('width: '+width, 'height: '+height, 'depth: '+depth);                    
-////                    
+                    // or this (but probably this)
+                    var helper = new THREE.BoxHelper(object);
+                    helper.geometry.computeBoundingBox();
+                    var width = (helper.geometry.boundingBox.max.x - helper.geometry.boundingBox.min.x);
+                    var height = (helper.geometry.boundingBox.max.y - helper.geometry.boundingBox.min.y);
+                    var depth = (helper.geometry.boundingBox.max.z - helper.geometry.boundingBox.min.z);
+                    console.log(helper.geometry.boundingBox);
+                    console.log('width: '+width, 'height: '+height, 'depth: '+depth);                    
+                    
+                    
+                    // or this
 //                    var boundingBox = new THREE.Box3();
 //                    boundingBox.copy(objecttemp.geometry.boundingBox);
 //                    objecttemp.updateMatrixWorld(true);
@@ -287,9 +245,7 @@ function loadGLTFModel( model ) {
                     
                     
                     //var ballMass = width.toFixed(2)*height.toFixed(2)*depth.toFixed(2);
-                    //var ballMass = 1;
                     var ballMass=0;
-                    //if(i!=24 && i!=25){
                     if(depth<3.5){
                         var ballShape = new Ammo.btBoxShape( new Ammo.btVector3( width, height, depth ) );
                         ballShape.setMargin( 0.0 );
@@ -300,10 +256,6 @@ function loadGLTFModel( model ) {
                     else{
                         roomscene.add(objecttemp);
                     }
-                    //19 wallnew
-                    //18 wall2
-                    //4 outside picture
-                    //21 ground
                     i++;
                 });
             
@@ -354,34 +306,9 @@ function loadFBXModel( model ) {
  * Render loop. Renders the next frame of all animations
  */
 function animate() {
-/*        
-        var time = performance.now();
-        var delta = ( time - prevTime ) / 1000;
-        velocity.x -= velocity.x * 10.0 * delta;
-        velocity.z -= velocity.z * 10.0 * delta;
-        velocity.y -= 9.8 * 20.0 * delta; // 100.0 = mass
-        direction.z = Number( moveForward ) - Number( moveBackward );
-        direction.x = Number( moveRight ) - Number( moveLeft );
-        direction.normalize(); // this ensures consistent movements in all directions
-        if ( moveForward || moveBackward ) velocity.z -= direction.z * 100.0 * delta;
-        if ( moveLeft || moveRight ) velocity.x -= direction.x * 100.0 * delta;
-*/
-        
-//        if(models.length!=0){
-//            models[0].position.copy(  new THREE.Vector3( models[0].position.x- velocity.x * delta, models[0].position.y+(velocity.y * delta), models[0].position.z+velocity.z * delta ));                
-//            //models[0].position.copy(  new THREE.Vector3( models[0].position.x- velocity.x * delta, models[0].position.y, models[0].position.z+velocity.z * delta ));
-//            if ( models[0].position.y < 1 ) {
-//                    velocity.y = 0;
-//                    models[0].position.copy(  new THREE.Vector3( models[0].position.x, 1, models[0].position.z));                
-//                    canJump = true;
-//            }
-//            prevTime = time;
-//            //scene.add(models[1]);
-//            scene.add(models[0]);
-//        }
-        
         // Get the time elapsed since the last frame
         var delta = clock.getDelta();
+        
         // Update all the animation frames
 //        for ( var i = 0; i < mixers.length; ++ i ) {
 //                mixers[ i ].update( delta );
@@ -785,7 +712,11 @@ function ThirdPersonControls ( object, domElement ) {
                                 }
                         }                        
                         camera.position.copy(new THREE.Vector3(this.object.position.x,this.object.position.y+1,this.object.position.z-1.5));
+                        
+                        // look at the cat
                         camera.lookAt(this.object.position);
+                        
+                        // look also up and down
                         //camera.lookAt(new THREE.Vector3().setFromSphericalCoords( 1, phi, theta ).add( camera.position ));
                                      
                         //this.object.rotation.y = 4.4+(-this.mouseX*0.001);
