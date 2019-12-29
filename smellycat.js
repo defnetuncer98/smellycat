@@ -5,6 +5,7 @@ import { FBXLoader } from './node_modules/three/examples/jsm/loaders/FBXLoader.j
 //////////////////////////////
 // Global objects
 //////////////////////////////
+var rotay=0;
 var space = false;
 var scene = null; // THREE.Scene where it all will be rendered
 var renderer = null;
@@ -79,7 +80,7 @@ var MODELS = [
             loader:"fbx",
             path: "./node_modules/three/examples/models/fbx/cat.fbx",
             //position: { x: -1.1, y: 1, z: -0.5 }, //on the chair
-            position: { x: 1, y: 1, z: -1 }, //on the bed
+            position: { x: 0, y: 0, z: 0 }, //on the bed
             rotation: { x: 0, y: 0, z: 0},
             scale: 0.0003, // Scaling of the unit. 1.0 means: use original size, 0.1 means "10 times smaller", etc.
             animationName: 5 // Name of animation to run            
@@ -88,6 +89,7 @@ var MODELS = [
             name: "BedroomInArles", 
             loader: "gltf",
             path: "./node_modules/three/examples/models/gltf/BedroomInArles/splitobjects.glb",
+            //path: "./node_modules/three/examples/models/gltf/the_great_sorcerers_room/scene.gltf",
             position: { x: 0, y: 0, z: 0 }, // Where to put the unit in the scene
             scale: 20, // Scaling of the unit. 1.0 means: use original size, 0.1 means "10 times smaller", etc.
         },
@@ -143,7 +145,7 @@ function loadModels() {
         for ( var i = 0; i < MODELS.length; ++ i ) {
                 var m = MODELS[ i ];
                 if(m.loader==="fbx") loadFBXModel( m );
-                else loadGLTFModel( m );
+                //else loadGLTFModel( m );
         }
         pos.set( 0, -0.6, 0 );
         quat.set( 0, 0, 0, 1 );
@@ -204,7 +206,7 @@ function loadGLTFModel( model ) {
                 console.log(gltf.scene);
                 gltfscene.traverse( function ( object ) {
                         if ( object.isMesh) {
-                            yey.push(object);
+                            yey.push(object.rotateOnAxis(new THREE.Vector3(1,0,0).normalize(), -0.1));
                         }
                         i++;
                 } );
@@ -299,7 +301,7 @@ function loadFBXModel( model ) {
                 body.setActivationState( 4 );
                 console.log( "Done loading model", model.name );
                 controls = new ThirdPersonControls( rigidBodies[0], renderer.domElement );       
-                
+                camera.position.copy(new THREE.Vector3(rigidBodies[0].x,rigidBodies[0].y+1,rigidBodies[0].z-1.5));
         } );
 }
 /**
@@ -357,7 +359,7 @@ function initRenderer() {
  */
 function initScene() {
         camera = new THREE.PerspectiveCamera( 45, window.innerWidth / window.innerHeight, 1, 10000 );
-        camera.position.set( 0, 10, 0 );
+        camera.position.set( 0, 100, 0 );
         camera.lookAt(0,0,0);
         clock = new THREE.Clock();
         scene = new THREE.Scene();
@@ -380,6 +382,11 @@ function initScene() {
         window.addEventListener( 'resize', onWindowResize, false );
         var axesHelper = new THREE.AxesHelper( 100 );
         scene.add( axesHelper );
+        var size = 10;
+        var divisions = 10;
+
+        var gridHelper = new THREE.GridHelper( size, divisions );
+        scene.add( gridHelper );
 }
 
 /**
@@ -411,7 +418,7 @@ function ThirdPersonControls ( object, domElement ) {
 	this.heightMin = 0.0;
 	this.heightMax = 1.0;
 
-        this.movementSpeed = 5;
+        this.movementSpeed = 50;
         this.lookSpeed = 0.1;
 
         this.constrainVertical = true;
@@ -601,29 +608,6 @@ function ThirdPersonControls ( object, domElement ) {
                         if ( ! this.activeLook ) actualLookSpeed = 0;
 
 
-                        // obj - your object (THREE.Object3D or derived)
-                        // point - the point of rotation (THREE.Vector3)
-                        // axis - the axis of rotation (normalized THREE.Vector3)
-                        // theta - radian value of rotation
-                        // pointIsWorld - boolean indicating the point is in world coordinates (default = false)
-                        function rotateAboutPoint(obj, point, axis, theta, pointIsWorld){
-                            pointIsWorld = (pointIsWorld === undefined)? false : pointIsWorld;
-
-                            if(pointIsWorld){
-                                obj.parent.localToWorld(obj.position); // compensate for world coordinate
-                            }
-
-                            obj.position.sub(point); // remove the offset
-                            obj.position.applyAxisAngle(axis, theta); // rotate the POSITION
-                            obj.position.add(point); // re-add the offset
-
-                            if(pointIsWorld){
-                                obj.parent.worldToLocal(obj.position); // undo world coordinates compensation
-                            }
-
-                            obj.rotateOnAxis(axis, theta); // rotate the OBJECT
-                        }
-
 			var actualLookSpeed = delta * this.lookSpeed;
                         var actualMoveSpeed  = delta * this.movementSpeed;
                         if(!shiftisup) actualMoveSpeed = delta * this.movementSpeed * 3;
@@ -654,15 +638,16 @@ function ThirdPersonControls ( object, domElement ) {
 
                         var velox=0;
                         var veloz=0;
-                        var rotay=1;
                         
                         if ( this.moveLeft) { //A
                             idle=false; 
-                            velox = -actualMoveSpeed;
+                            rotay-=0.05;
+                           // velox = -actualMoveSpeed;
                         }
 			else if ( this.moveRight ) { //D
                             idle=false;
-                            velox = actualMoveSpeed;
+                            rotay+=0.05;                            
+                           // velox = actualMoveSpeed;
                         }
                         else {
                             idle=true;
@@ -670,7 +655,8 @@ function ThirdPersonControls ( object, domElement ) {
 
 			if ( this.moveBackward) { //S
                             idle=false; 
-                            veloz = -actualMoveSpeed;
+                            veloz = -actualMoveSpeed*Math.cos(rotay);
+                            velox = -actualMoveSpeed*Math.sin(rotay);
                             //this.object.userData.physicsBody.setLinearVelocity(new Ammo.btVector3( 0, 0, -actualMoveSpeed));
                             
                             //this.object.translateZ( - ( actualMoveSpeed ) );
@@ -678,7 +664,8 @@ function ThirdPersonControls ( object, domElement ) {
                         }
 			else if ( this.moveForward ) { //W
                             idle=false;
-                            veloz = actualMoveSpeed;
+                            veloz = actualMoveSpeed*Math.cos(rotay);
+                            velox = actualMoveSpeed*Math.sin(rotay);
                             //this.object.userData.physicsBody.setLinearVelocity(new Ammo.btVector3( 0, 0, actualMoveSpeed));
                             
                             //this.object.translateZ( actualMoveSpeed );
@@ -689,8 +676,7 @@ function ThirdPersonControls ( object, domElement ) {
                         }
                         
                         this.object.userData.physicsBody.setLinearVelocity(new Ammo.btVector3( velox, 0, veloz));                        
-                    
-                        if(space) {
+                    if(space) {
                             this.object.userData.physicsBody.setLinearVelocity(new Ammo.btVector3( 0, actualMoveSpeed*5, 0));                            
                             space=false;
                         }                        
@@ -707,11 +693,38 @@ function ThirdPersonControls ( object, domElement ) {
                                         var p = transformAux1.getOrigin();
                                         var q = transformAux1.getRotation();
                                         objThree.position.set( p.x(), p.y(), p.z() );
-                                        objThree.quaternion.set( q.x(), q.y(), q.z(), q.w() );
-                                        objThree.rotation.y = 0.44+(-this.mouseX*0.001*rotay);
+                                        //objThree.quaternion.set( q.x(), q.y(), q.z(), q.w() );
+                                        //objThree.rotation.y = 0.44+(-this.mouseX*0.001);
+                                        objThree.rotation.y = rotay;
                                 }
-                        }                        
-                        camera.position.copy(new THREE.Vector3(this.object.position.x,this.object.position.y+1,this.object.position.z-1.5));
+                        }        
+                                                // obj - your object (THREE.Object3D or derived)
+                        // point - the point of rotation (THREE.Vector3)
+                        // axis - the axis of rotation (normalized THREE.Vector3)
+                        // theta - radian value of rotation
+                        // pointIsWorld - boolean indicating the point is in world coordinates (default = false)
+                        function rotateAboutPoint(obj, point, axis, theta, pointIsWorld){
+                            pointIsWorld = (pointIsWorld === undefined)? false : pointIsWorld;
+
+                            if(pointIsWorld){
+                                obj.parent.localToWorld(obj.position); // compensate for world coordinate
+                            }
+
+                            obj.position.sub(point); // remove the offset
+                            obj.position.applyAxisAngle(axis, theta); // rotate the POSITION
+                            obj.position.add(point); // re-add the offset
+
+                            if(pointIsWorld){
+                                obj.parent.worldToLocal(obj.position); // undo world coordinates compensation
+                            }
+
+                            obj.rotateOnAxis(axis, theta); // rotate the OBJECT
+                        }
+
+                        var deltacamera = new THREE.Vector3(this.object.position.x+Math.sin(Math.PI*3/2+this.mouseX*0.005)*1.5, 
+                                                            this.object.position.y+1+Math.sin(this.mouseY*0.005), 
+                                                            this.object.position.z+Math.cos(Math.PI*3/2+this.mouseX*0.005)*1.5)
+                        camera.position.copy(deltacamera);
                         
                         // look at the cat
                         camera.lookAt(this.object.position);
@@ -721,7 +734,7 @@ function ThirdPersonControls ( object, domElement ) {
                                      
                         //this.object.rotation.y = 4.4+(-this.mouseX*0.001);
                         
-                        rotateAboutPoint(roomscene, this.object.position, new THREE.Vector3(0,1,0).normalize(), this.mouseDeltaX*0.000005*Math.abs(this.mouseX), true);
+                        //rotateAboutPoint(roomscene, this.object.position, new THREE.Vector3(0,1,0).normalize(), this.mouseDeltaX*0.000005*Math.abs(this.mouseX), true);
                         this.mouseDeltaX=0.0;
                         this.mouseDeltaY=0.0;
 		};
