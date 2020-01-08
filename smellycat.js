@@ -3,8 +3,62 @@ import { GLTFLoader } from './node_modules/three/examples/jsm/loaders/GLTFLoader
 import { FBXLoader } from './node_modules/three/examples/jsm/loaders/FBXLoader.js';
 
 //////////////////////////////
-// Global objects
+// Global objects   
 //////////////////////////////
+var play = false;
+
+function onPlayClick() {
+    loading.style.display = "none";
+    container.style.display = "block";
+    
+    play=true; score=0;
+    info.style.display="block";
+    info.innerText='Score: '+score;
+    playbutton.style.display="none";
+}
+
+function onDocumentMouseClick( event ) {
+        event.preventDefault();
+        mouse.x = ( event.clientX / window.innerWidth ) * 2 - 1;
+        mouse.y = - ( event.clientY / window.innerHeight ) * 2 + 1;
+        raycaster.setFromCamera( mouse, camera );
+        var intersects = raycaster.intersectObjects( roomscene.children );
+        if ( intersects.length > 0 ) {
+                var object = intersects[ 0 ].object;
+                if(object.name!="mesh_1"){
+                      score+=1;
+                      if(score==10) {
+                          playbutton.style.display="block";
+                          play=false;
+                          playbutton.innerHTML = "Smelly Cat WINS! Play Again?";
+                      }
+                      info.innerText='Score: '+score;
+                      scene.remove(scene.getObjectByName("roomscene"));
+                      roomscene.remove(object);
+                      scene.add(roomscene);
+
+
+//                    var helper = new THREE.BoxHelper(object);
+//                    helper.geometry.computeBoundingBox();
+//                    var width = (helper.geometry.boundingBox.max.x - helper.geometry.boundingBox.min.x);
+//                    var height = (helper.geometry.boundingBox.max.y - helper.geometry.boundingBox.min.y);
+//                    var depth = (helper.geometry.boundingBox.max.z - helper.geometry.boundingBox.min.z);                
+//                    var ballShape = new Ammo.btBoxShape( new Ammo.btVector3( width,height,depth) );
+//                    ballShape.setMargin( 0.0 );
+//                    var ballMass = 1;
+//                    var ballBody = createRigidBody( object, ballShape, ballMass, object.position, object.quaternion );
+//                    ballBody.setFriction( 0.5 );
+            }
+        }
+}
+var info = document.getElementById('info');
+var container = document.getElementById('container');
+var playbutton = document.getElementById('playbutton');
+var loading = document.getElementById('loading');
+playbutton.addEventListener('click', onPlayClick);
+var score = 0;
+var mouse = new THREE.Vector2();
+var raycaster = new THREE.Raycaster();
 var rotay=2;
 var space = false;
 var scene = null; // THREE.Scene where it all will be rendered
@@ -58,9 +112,9 @@ function createRigidBody( threeObject, physicsShape, mass, pos, quat ) {
                 // Disable deactivation
                 //body.setActivationState( 4 );
         }
-        else {
-            roomscene.add(threeObject);
-        }
+        //else {
+            //roomscene.add(threeObject);
+        //}
         //else console.log('no mass mesh');
         
         physicsWorld.addRigidBody( body );
@@ -88,8 +142,7 @@ var MODELS = [
         {
             name: "BedroomInArles", 
             loader: "gltf",
-            path: "./node_modules/three/examples/models/gltf/BedroomInArles/splitobjects.glb",
-            //path: "./node_modules/three/examples/models/gltf/the_great_sorcerers_room/scene.gltf",
+            path: "./node_modules/three/examples/models/gltf/BedroomInArles/bedroom.glb",
             position: { x: 0, y: 0, z: 0 }, // Where to put the unit in the scene
             scale: 20, // Scaling of the unit. 1.0 means: use original size, 0.1 means "10 times smaller", etc.
         },
@@ -106,7 +159,7 @@ function init() {
     initRenderer();
     initPhysics();
     loadModels();
-    initInput();
+    //initInput();
 }    
 
 function initPhysics() {
@@ -147,7 +200,7 @@ function loadModels() {
                 if(m.loader==="fbx") loadFBXModel( m );
                 else loadGLTFModel( m );
         }
-        pos.set( 0, -0.5, 0 );
+        pos.set( 0, -0.4, 0 );
         quat.set( 0, 0, 0, 1 );
         var ground = createParalellepiped( 100, 1, 100, 0, pos, quat, new THREE.MeshPhongMaterial( {color:'#808080'} ) );
         ground.castShadow = true;
@@ -202,13 +255,13 @@ function loadGLTFModel( model ) {
                 var gltfscene = gltf.scene;
                 var yey = [];
                 var i=0;
-                console.log(gltfscene);
-                scene.add(gltfscene);
+                //console.log(gltfscene);
+                //scene.add(gltfscene);
                 
                 // bed
                 pos.set( 0.8, 0, -1.6 );
                 quat.set( 0, 0, 0, 1 );
-                createParalellepiped( 1.2, 2, 3, 0, pos, quat, new THREE.MeshPhongMaterial( {color:'#808080'} ) );
+                createParalellepiped( 1.2, 1.63, 3, 0, pos, quat, new THREE.MeshPhongMaterial( {color:'#808080'} ) );
                 
                 // wall near bed
                 pos.set( 2, 0, 3 );
@@ -246,10 +299,10 @@ function loadGLTFModel( model ) {
                 quat.set( 0, 0, 0, 1 );
                 createParalellepiped( 1, 0.2, 1, 0, pos, quat, new THREE.MeshPhongMaterial( {color:'#808080'} ) );                                 
             
-            /*
+            
                 gltfscene.traverse( function ( object ) {
                         if ( object.isMesh) {
-                            yey.push(object.rotateOnAxis(new THREE.Vector3(1,0,0).normalize(), -0.1));
+                            yey.push(object);
                         }
                         i++;
                 } );
@@ -258,21 +311,21 @@ function loadGLTFModel( model ) {
                 yey.forEach( function (object) {
                     var objecttemp = object;
                     
-                    //this
-                    var width = (objecttemp.geometry.boundingBox.max.x - objecttemp.geometry.boundingBox.min.x);
-                    var height = (objecttemp.geometry.boundingBox.max.y - objecttemp.geometry.boundingBox.min.y);
-                    var depth = (objecttemp.geometry.boundingBox.max.z - objecttemp.geometry.boundingBox.min.z);
-                    console.log(object.geometry.boundingBox);
-                    console.log('width: '+width, 'height: '+height, 'depth: '+depth);
-
-                    // or this (but probably this)
-                    var helper = new THREE.BoxHelper(object);
-                    helper.geometry.computeBoundingBox();
-                    var width = (helper.geometry.boundingBox.max.x - helper.geometry.boundingBox.min.x);
-                    var height = (helper.geometry.boundingBox.max.y - helper.geometry.boundingBox.min.y);
-                    var depth = (helper.geometry.boundingBox.max.z - helper.geometry.boundingBox.min.z);
-                    console.log(helper.geometry.boundingBox);
-                    console.log('width: '+width, 'height: '+height, 'depth: '+depth);                    
+//                    //this
+//                    var width = (objecttemp.geometry.boundingBox.max.x - objecttemp.geometry.boundingBox.min.x);
+//                    var height = (objecttemp.geometry.boundingBox.max.y - objecttemp.geometry.boundingBox.min.y);
+//                    var depth = (objecttemp.geometry.boundingBox.max.z - objecttemp.geometry.boundingBox.min.z);
+//                    console.log(object.geometry.boundingBox);
+//                    console.log('width: '+width, 'height: '+height, 'depth: '+depth);
+//
+//                    // or this (but probably this)
+//                    var helper = new THREE.BoxHelper(object);
+//                    helper.geometry.computeBoundingBox();
+//                    var width = (helper.geometry.boundingBox.max.x - helper.geometry.boundingBox.min.x);
+//                    var height = (helper.geometry.boundingBox.max.y - helper.geometry.boundingBox.min.y);
+//                    var depth = (helper.geometry.boundingBox.max.z - helper.geometry.boundingBox.min.z);
+//                    console.log(helper.geometry.boundingBox);
+//                    console.log('width: '+width, 'height: '+height, 'depth: '+depth);                    
                     
                     
                     // or this
@@ -290,23 +343,23 @@ function loadGLTFModel( model ) {
                     
                     
                     //var ballMass = width.toFixed(2)*height.toFixed(2)*depth.toFixed(2);
-                    var ballMass=0;
-                    if(depth<3.5){
-                        var ballShape = new Ammo.btBoxShape( new Ammo.btVector3( width, height, depth ) );
-                        ballShape.setMargin( 0.0 );
-                        var ballBody = createRigidBody( objecttemp, ballShape, ballMass, objecttemp.position, objecttemp.quaternion );
-                        ballBody.setFriction( 0.5 );
-                        console.log(i);
-                    }
-                    else{
+//                    var ballMass=0;
+//                    if(depth<3.5){
+//                        var ballShape = new Ammo.btBoxShape( new Ammo.btVector3( width, height, depth ) );
+//                        ballShape.setMargin( 0.0 );
+//                        var ballBody = createRigidBody( objecttemp, ballShape, ballMass, objecttemp.position, objecttemp.quaternion );
+//                        ballBody.setFriction( 0.5 );
+//                        console.log(i);
+//                    }
+//                    else{
                         roomscene.add(objecttemp);
-                    }
-                    i++;
+//                    }
                 });
             
                 console.log( "Done loading model", model.name );
+                roomscene.name = "roomscene";
                 scene.add(roomscene);
-            */
+            
                 } );
 }
 
@@ -361,8 +414,7 @@ function animate() {
 //        }
         
         if(!idle) mixers[0].update(delta);
-
-        if(rigidBodies.length>1){
+        if(rigidBodies.length>0 && play){
             controls.update( delta );            
         }
         
@@ -373,7 +425,7 @@ function animate() {
         //models[0].rotation.copy(  new THREE.Euler(theta, 0, theta ));
         //scene.add(models[0]);        
         //updatePhysics( delta );
-	processClick();
+	//processClick();
         requestAnimationFrame( animate );
         renderer.render( scene, camera );
 }
@@ -386,7 +438,6 @@ function animate() {
  * Initialize ThreeJS scene renderer
  */
 function initRenderer() {
-        var container = document.getElementById( 'container' );
         var canvas = document.createElement( 'canvas' );
         var context = canvas.getContext( 'webgl2', { alpha: false } );
         renderer = new THREE.WebGLRenderer( { canvas: canvas, context: context } );
@@ -408,7 +459,7 @@ function initScene() {
         clock = new THREE.Clock();
         scene = new THREE.Scene();
       
-        scene.background = new THREE.Color( 0xa0a0a0 );
+        scene.background = new THREE.Color( 0x3744ff );
         //scene.fog = new THREE.Fog( 0xa0a0a0, 10, 22 );
         var hemiLight = new THREE.HemisphereLight( 0xffffff, 0x444444 );
         hemiLight.position.set( 0, 20, 0 );
@@ -424,13 +475,14 @@ function initScene() {
         dirLight.shadow.camera.far = 40;
         scene.add( dirLight );
         window.addEventListener( 'resize', onWindowResize, false );
+        window.addEventListener( 'click', onDocumentMouseClick, false );
         var axesHelper = new THREE.AxesHelper( 100 );
-        scene.add( axesHelper );
+        //scene.add( axesHelper );
         var size = 10;
         var divisions = 10;
 
         var gridHelper = new THREE.GridHelper( size, divisions );
-        scene.add( gridHelper );
+        //scene.add( gridHelper );
 }
 
 /**
@@ -738,41 +790,22 @@ function ThirdPersonControls ( object, domElement ) {
                                         var p = transformAux1.getOrigin();
                                         var q = transformAux1.getRotation();
                                         objThree.position.set( p.x(), p.y(), p.z() );
-                                        //objThree.quaternion.set( q.x(), q.y(), q.z(), q.w() );
+                                        if(i!=0) objThree.quaternion.set( q.x(), q.y(), q.z(), q.w() );
                                         //objThree.rotation.y = 0.44+(-this.mouseX*0.001);
-                                        objThree.rotation.y = rotay;
                                 }
                         }        
-                                                // obj - your object (THREE.Object3D or derived)
-                        // point - the point of rotation (THREE.Vector3)
-                        // axis - the axis of rotation (normalized THREE.Vector3)
-                        // theta - radian value of rotation
-                        // pointIsWorld - boolean indicating the point is in world coordinates (default = false)
-                        function rotateAboutPoint(obj, point, axis, theta, pointIsWorld){
-                            pointIsWorld = (pointIsWorld === undefined)? false : pointIsWorld;
+                        
+                        this.object.rotation.y = rotay;
 
-                            if(pointIsWorld){
-                                obj.parent.localToWorld(obj.position); // compensate for world coordinate
-                            }
-
-                            obj.position.sub(point); // remove the offset
-                            obj.position.applyAxisAngle(axis, theta); // rotate the POSITION
-                            obj.position.add(point); // re-add the offset
-
-                            if(pointIsWorld){
-                                obj.parent.worldToLocal(obj.position); // undo world coordinates compensation
-                            }
-
-                            obj.rotateOnAxis(axis, theta); // rotate the OBJECT
-                        }
-                        console.log(this.mouseX);
                         var deltacamera = new THREE.Vector3(this.object.position.x+Math.sin(Math.PI*3/2-this.mouseX*0.002)*1.5, 
                                                             this.object.position.y+1+Math.sin(this.mouseY*0.002), 
                                                             this.object.position.z+Math.cos(Math.PI*3/2-this.mouseX*0.002)*1.5)
                         camera.position.copy(deltacamera);
                         
                         // look at the cat
-                        camera.lookAt(this.object.position);
+                        camera.lookAt(new THREE.Vector3(this.object.position.x,
+                                                        this.object.position.y-this.mouseY*0.002,
+                                                        this.object.position.z));
                         
                         // look also up and down
                         //camera.lookAt(new THREE.Vector3().setFromSphericalCoords( 1, phi, theta ).add( camera.position ));
@@ -828,37 +861,37 @@ function ThirdPersonControls ( object, domElement ) {
 
 };
 
-function initInput() {
-        window.addEventListener( 'mousedown', function ( event ) {
-                if ( ! clickRequest ) {
-                        mouseCoords.set(
-                                ( event.clientX / window.innerWidth ) * 2 - 1,
-                                - ( event.clientY / window.innerHeight ) * 2 + 1
-                        );
-                        clickRequest = true;
-                }
-        }, false );
-}
-function processClick() {
-        if ( clickRequest ) {
-                raycaster.setFromCamera( mouseCoords, camera );
-                // Creates a ball
-                var ballMass = 1;
-                var ballRadius = 0.05;
-                var ball = new THREE.Mesh( new THREE.SphereBufferGeometry( ballRadius, 18, 16 ), ballMaterial );
-                ball.castShadow = true;
-                ball.receiveShadow = true;
-                var ballShape = new Ammo.btSphereShape( ballRadius );
-                ballShape.setMargin( margin );
-                pos.copy( raycaster.ray.direction );
-                pos.add( raycaster.ray.origin );
-                quat.set( 0, 0, 0, 1 );
-                var ballBody = createRigidBody( ball, ballShape, ballMass, pos, quat );
-                ballBody.setFriction( 0.5 );
-                ballBody.setActivationState( 4 );                
-                pos.copy( raycaster.ray.direction );
-                pos.multiplyScalar( 1 );
-                ballBody.setLinearVelocity( new Ammo.btVector3( pos.x, pos.y, pos.z ) );
-                clickRequest = false;
-        }
-}
+//function initInput() {
+//        window.addEventListener( 'mousedown', function ( event ) {
+//                if ( ! clickRequest ) {
+//                        mouseCoords.set(
+//                                ( event.clientX / window.innerWidth ) * 2 - 1,
+//                                - ( event.clientY / window.innerHeight ) * 2 + 1
+//                        );
+//                        clickRequest = true;
+//                }
+//        }, false );
+//}
+//function processClick() {
+//        if ( clickRequest ) {
+//                raycaster.setFromCamera( mouseCoords, camera );
+//                // Creates a ball
+//                var ballMass = 1;
+//                var ballRadius = 0.05;
+//                var ball = new THREE.Mesh( new THREE.SphereBufferGeometry( ballRadius, 18, 16 ), ballMaterial );
+//                ball.castShadow = true;
+//                ball.receiveShadow = true;
+//                var ballShape = new Ammo.btSphereShape( ballRadius );
+//                ballShape.setMargin( margin );
+//                pos.copy( raycaster.ray.direction );
+//                pos.add( raycaster.ray.origin );
+//                quat.set( 0, 0, 0, 1 );
+//                var ballBody = createRigidBody( ball, ballShape, ballMass, pos, quat );
+//                ballBody.setFriction( 0.5 );
+//                ballBody.setActivationState( 4 );                
+//                pos.copy( raycaster.ray.direction );
+//                pos.multiplyScalar( 1 );
+//                ballBody.setLinearVelocity( new Ammo.btVector3( pos.x, pos.y, pos.z ) );
+//                clickRequest = false;
+//        }
+//}
