@@ -5,7 +5,7 @@ import { FBXLoader } from './node_modules/three/examples/jsm/loaders/FBXLoader.j
 //////////////////////////////
 // Global objects
 //////////////////////////////
-var rotay=0;
+var rotay=2;
 var space = false;
 var scene = null; // THREE.Scene where it all will be rendered
 var renderer = null;
@@ -32,7 +32,7 @@ var quat = new THREE.Quaternion();
 var margin = 0.05;
 var rigidBodies = [];  // hold cat in the first index, and rest is balls
 var softBodies = [];
-const gravityConstant = - 9.8;
+const gravityConstant = - 20;
 var clickRequest = false;
 var mouseCoords = new THREE.Vector2();
 var roomscene = new THREE.Group();  // all room is in here
@@ -145,9 +145,9 @@ function loadModels() {
         for ( var i = 0; i < MODELS.length; ++ i ) {
                 var m = MODELS[ i ];
                 if(m.loader==="fbx") loadFBXModel( m );
-                //else loadGLTFModel( m );
+                else loadGLTFModel( m );
         }
-        pos.set( 0, -0.6, 0 );
+        pos.set( 0, -0.5, 0 );
         quat.set( 0, 0, 0, 1 );
         var ground = createParalellepiped( 100, 1, 100, 0, pos, quat, new THREE.MeshPhongMaterial( {color:'#808080'} ) );
         ground.castShadow = true;
@@ -200,10 +200,53 @@ function loadGLTFModel( model ) {
         loader.load( model.path, function ( gltf ) {
                 // Enable Shadows
                 var gltfscene = gltf.scene;
-                console.log(gltf.scene);
                 var yey = [];
                 var i=0;
-                console.log(gltf.scene);
+                console.log(gltfscene);
+                scene.add(gltfscene);
+                
+                // bed
+                pos.set( 0.8, 0, -1.6 );
+                quat.set( 0, 0, 0, 1 );
+                createParalellepiped( 1.2, 2, 3, 0, pos, quat, new THREE.MeshPhongMaterial( {color:'#808080'} ) );
+                
+                // wall near bed
+                pos.set( 2, 0, 3 );
+                quat.set( 0, 0, 0, 1 );
+                createParalellepiped( 1, 10, 10, 0, pos, quat, new THREE.MeshPhongMaterial( {color:'#808080'} ) );
+                // opposite wall
+                pos.set( -2.1, 0, 0 );
+                quat.set( 0, 0, 0, 1 );
+                createParalellepiped( 1, 15, 10, 0, pos, quat, new THREE.MeshPhongMaterial( {color:'#808080'} ) );
+                
+                
+                // wall with window
+                pos.set( 0, 0, -3.3 );
+                quat.set( 0, 0, 0, 1 );
+                createParalellepiped( 10, 10, 1, 0, pos, quat, new THREE.MeshPhongMaterial( {color:'#808080'} ) );
+                // opposite wall
+                pos.set( 0, 0, 2.5 );
+                quat.set( 0, 0, 0, 1 );
+                createParalellepiped( 10, 10, 1, 0, pos, quat, new THREE.MeshPhongMaterial( {color:'#808080'} ) );                
+
+                // chair by the wall
+                pos.set( -1.3, 0, -0.4 );
+                quat.set( 0, 0, 0, 1 );
+                createParalellepiped( 0.5, 1.1, 0.5, 0, pos, quat, new THREE.MeshPhongMaterial( {color:'#808080'} ) );                                 
+
+            
+                // chair by the bed
+                pos.set( 0, 0, -2 );
+                quat.set( 0, 1, 0, 1 );
+                createParalellepiped( 0.5, 1.1, 0.5, 0, pos, quat, new THREE.MeshPhongMaterial( {color:'#808080'} ) );                                 
+
+            
+                // table by the bed
+                pos.set( -0.5, 1, -2 );
+                quat.set( 0, 0, 0, 1 );
+                createParalellepiped( 1, 0.2, 1, 0, pos, quat, new THREE.MeshPhongMaterial( {color:'#808080'} ) );                                 
+            
+            /*
                 gltfscene.traverse( function ( object ) {
                         if ( object.isMesh) {
                             yey.push(object.rotateOnAxis(new THREE.Vector3(1,0,0).normalize(), -0.1));
@@ -263,6 +306,7 @@ function loadGLTFModel( model ) {
             
                 console.log( "Done loading model", model.name );
                 scene.add(roomscene);
+            */
                 } );
 }
 
@@ -293,7 +337,7 @@ function loadFBXModel( model ) {
                         gltf.rotation.copy( new THREE.Euler( model.rotation.x,model.rotation.y,model.rotation.z));
                 }
                 startAnimation( gltf, gltf.animations, model.animationName );
-                var ballMass = 10
+                var ballMass = 10;
                 var ballShape = new Ammo.btBoxShape( new Ammo.btVector3( 0.1,0.1,0.4 )  );
                 ballShape.setMargin( 0.0 );
                 var body = createRigidBody( gltf, ballShape, ballMass, gltf.position, gltf.quaternion );
@@ -418,7 +462,7 @@ function ThirdPersonControls ( object, domElement ) {
 	this.heightMin = 0.0;
 	this.heightMax = 1.0;
 
-        this.movementSpeed = 50;
+        this.movementSpeed = 25;
         this.lookSpeed = 0.1;
 
         this.constrainVertical = true;
@@ -677,7 +721,7 @@ function ThirdPersonControls ( object, domElement ) {
                         
                         this.object.userData.physicsBody.setLinearVelocity(new Ammo.btVector3( velox, 0, veloz));                        
                     if(space) {
-                            this.object.userData.physicsBody.setLinearVelocity(new Ammo.btVector3( 0, actualMoveSpeed*5, 0));                            
+                            this.object.userData.physicsBody.setLinearVelocity(new Ammo.btVector3( 0, actualMoveSpeed*10, 0));
                             space=false;
                         }                        
                         
@@ -687,6 +731,7 @@ function ThirdPersonControls ( object, domElement ) {
                         for ( var i = 0, il = rigidBodies.length; i < il; i ++ ) {
                                 var objThree = rigidBodies[ i ];
                                 var objPhys = objThree.userData.physicsBody;
+                                objThree.userData.physicsBody.setActivationState( 4 );
                                 var ms = objPhys.getMotionState();
                                 if ( ms ) {
                                         ms.getWorldTransform( transformAux1 );
@@ -720,10 +765,10 @@ function ThirdPersonControls ( object, domElement ) {
 
                             obj.rotateOnAxis(axis, theta); // rotate the OBJECT
                         }
-
-                        var deltacamera = new THREE.Vector3(this.object.position.x+Math.sin(Math.PI*3/2+this.mouseX*0.005)*1.5, 
-                                                            this.object.position.y+1+Math.sin(this.mouseY*0.005), 
-                                                            this.object.position.z+Math.cos(Math.PI*3/2+this.mouseX*0.005)*1.5)
+                        console.log(this.mouseX);
+                        var deltacamera = new THREE.Vector3(this.object.position.x+Math.sin(Math.PI*3/2-this.mouseX*0.002)*1.5, 
+                                                            this.object.position.y+1+Math.sin(this.mouseY*0.002), 
+                                                            this.object.position.z+Math.cos(Math.PI*3/2-this.mouseX*0.002)*1.5)
                         camera.position.copy(deltacamera);
                         
                         // look at the cat
@@ -735,6 +780,7 @@ function ThirdPersonControls ( object, domElement ) {
                         //this.object.rotation.y = 4.4+(-this.mouseX*0.001);
                         
                         //rotateAboutPoint(roomscene, this.object.position, new THREE.Vector3(0,1,0).normalize(), this.mouseDeltaX*0.000005*Math.abs(this.mouseX), true);
+                        
                         this.mouseDeltaX=0.0;
                         this.mouseDeltaY=0.0;
 		};
