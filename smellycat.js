@@ -145,7 +145,7 @@ var MODELS = [
         { 
             name: "Redcoat-Robin", 
             loader:"gltf",
-            path: "./node_modules/three/examples/models/fbx/redcoat-robin/scene.gltf",
+            path: "./node_modules/three/examples/models/gltf/redcoat-robin/scene.gltf",
             //position: { x: -1.1, y: 1, z: -0.5 }, //on the chair
             position: { x: 0.4, y: 1.32, z: -0.22 }, //on the bed
             rotation: { x: 0, y: 0, z: 0},
