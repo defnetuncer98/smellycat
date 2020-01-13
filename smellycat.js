@@ -66,6 +66,7 @@ var renderer = null;
 var camera = null;
 var clock = null;
 var mixers = []; // All the THREE.AnimationMixer objects for all the animations in the scene
+var birdmixer; // All the THREE.AnimationMixer objects for all the animations in the scene
 var moveForward = false;
 var moveBackward = false;
 var moveLeft = false;
@@ -90,7 +91,9 @@ const gravityConstant = - 20;
 var clickRequest = false;
 var mouseCoords = new THREE.Vector2();
 var roomscene = new THREE.Group();  // all room is in here
-
+var bird;
+var flying=false;
+var flyingleft=true;
 function createRigidBody( threeObject, physicsShape, mass, pos, quat ) {
         threeObject.position.copy( pos );
         threeObject.quaternion.copy( quat );
@@ -139,6 +142,16 @@ var MODELS = [
             scale: 0.0003, // Scaling of the unit. 1.0 means: use original size, 0.1 means "10 times smaller", etc.
             animationName: 5 // Name of animation to run            
         },    
+        { 
+            name: "Redcoat-Robin", 
+            loader:"gltf",
+            path: "./node_modules/three/examples/models/fbx/redcoat-robin/scene.gltf",
+            //position: { x: -1.1, y: 1, z: -0.5 }, //on the chair
+            position: { x: 0.4, y: 1.32, z: -0.22 }, //on the bed
+            rotation: { x: 0, y: 0, z: 0},
+            scale: 0.0002, // Scaling of the unit. 1.0 means: use original size, 0.1 means "10 times smaller", etc.
+            animationName: 3 // Name of animation to run            
+        },         
         {
             name: "BedroomInArles", 
             loader: "gltf",
@@ -197,6 +210,7 @@ function initPhysics() {
 function loadModels() {
         for ( var i = 0; i < MODELS.length; ++ i ) {
                 var m = MODELS[ i ];
+                if(i===2) {loadRoomModel(m); continue;}
                 if(m.loader==="fbx") loadFBXModel( m );
                 else loadGLTFModel( m );
         }
@@ -248,7 +262,28 @@ function getModelByName( name ) {
         return null;
 }
 
+
 function loadGLTFModel( model ) {
+        var loader = new GLTFLoader(); 
+        loader.load( model.path, function ( gltf ) {
+                if ( model.position ) {
+                        gltf.scene.position.copy(  new THREE.Vector3( model.position.x, model.position.y, model.position.z ));
+                }
+                if ( model.scale ) {
+                        gltf.scene.scale.copy(  new THREE.Vector3( model.scale, model.scale, model.scale ));
+                }
+                if ( model.rotation ) {
+                        gltf.scene.rotation.copy( new THREE.Euler( model.rotation.x,model.rotation.y,model.rotation.z));
+                }
+                var mixer = new THREE.AnimationMixer( gltf.scene );
+                var action = mixer.clipAction(gltf.animations[model.animationName]);
+                action.play();
+                birdmixer= mixer;
+                scene.add(gltf.scene);
+                bird=gltf;
+        });
+}
+function loadRoomModel( model ) {
         var loader = new GLTFLoader(); 
         loader.load( model.path, function ( gltf ) {
                 // Enable Shadows
@@ -413,9 +448,11 @@ function animate() {
 //                mixers[ i ].update( delta );
 //        }
         
-        if(!idle) mixers[0].update(delta);
         if(rigidBodies.length>0 && play){
-            controls.update( delta );            
+            if(!idle) mixers[0].update(delta);
+            controls.update( delta );  
+            if(flying)birdmixer.update(delta*0.1);
+            else birdmixer.update(delta);
         }
         
         //https://stackoverflow.com/questions/11636887/camera-lookat-vector?noredirect=1&lq=1
@@ -816,6 +853,44 @@ function ThirdPersonControls ( object, domElement ) {
                         
                         this.mouseDeltaX=0.0;
                         this.mouseDeltaY=0.0;
+                        
+                        if(!flying && Math.abs(this.object.position.x-bird.scene.position.x)<0.3 && Math.abs(this.object.position.z-bird.scene.position.z)<0.3 && Math.abs(this.object.position.y-bird.scene.position.y)<0.3){
+                            var mixer = new THREE.AnimationMixer( bird.scene );
+                            var action = mixer.clipAction(bird.animations[4]);
+                            action.play();
+                            birdmixer=mixer;
+                            flying=true;
+                        }
+                        if(flying){
+                            if(flyingleft) {
+                                bird.scene.position.z-=0.01;
+                                if(bird.scene.position.z<-2){
+                                    flying=false;
+                                    var mixer = new THREE.AnimationMixer( bird.scene );
+                                    var action = mixer.clipAction(bird.animations[3]);
+                                    action.play();
+                                    birdmixer=mixer; 
+                                    bird.scene.position.z=-2.26;
+                                    bird.scene.rotation.y = 3;                                    
+                                    flyingleft=false;
+                                }                                
+                            }
+                            else {
+                                bird.scene.position.z+=0.02;
+                                if(bird.scene.position.z>-0.2){
+                                    flying=false;
+                                    var mixer = new THREE.AnimationMixer( bird.scene );
+                                    var action = mixer.clipAction(bird.animations[3]);
+                                    action.play();
+                                    birdmixer=mixer;   
+                                    bird.scene.position.z=-0.22;
+                                    bird.scene.rotation.y = 0;                                                                        
+                                    flyingleft=true;
+                                }                                    
+                                
+                            }
+
+                        }
 		};
 	}();
 
