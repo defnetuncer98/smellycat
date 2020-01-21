@@ -19,7 +19,7 @@ function onPlayClick() {
     timetext.style.display="block";
     info.innerText=0;
     playbutton.style.display="none";
-    gameovertime=Math.round(5+new Date()/1000);
+    gameovertime=Math.round(60+new Date()/1000);
     
 }
 
@@ -952,58 +952,4 @@ function ThirdPersonControls ( object, domElement ) {
                             var mixer = new THREE.AnimationMixer( bird.scene );
                             var action = mixer.clipAction(bird.animations[number]);
                             action.play();
-                            birdmixer=mixer;                            
-                        }
-                        // Fly bird if cat got too close
-                        if(!flying && Math.abs(this.object.position.x-bird.scene.position.x)<0.3 && Math.abs(this.object.position.z-bird.scene.position.z)<0.3 && Math.abs(this.object.position.y-bird.scene.position.y)<0.3){
-                            changeBirdsAnimation(4); // fly
-                            flying=true;
-                        }
-                        else if(flying){
-                            if(flyingleft) { 
-                                bird.scene.position.z-=0.02;
-                                if(bird.scene.position.z<-2){
-                                    flying=false;
-                                    changeBirdsAnimation(3); // stop
-                                    bird.scene.position.z=-2.26;
-                                    bird.scene.rotation.y = 3;                                    
-                                    flyingleft=false;
-                                }                                
-                            }
-                            else {
-                                bird.scene.position.z+=0.02;
-                                if(bird.scene.position.z>-0.2){
-                                    flying=false;
-                                    changeBirdsAnimation(3); // stop
-                                    bird.scene.position.z=-0.22;
-                                    bird.scene.rotation.y = 0;                                                                        
-                                    flyingleft=true;
-                                }                                    
-                            }
-                        }
-		};
-	}();
-
-	function contextmenu( event ) {
-		event.preventDefault();
-	}
-
-	var _onMouseMove = bind( this, this.onMouseMove );
-	var _onMouseDown = bind( this, this.onMouseDown );
-	var _onMouseUp = bind( this, this.onMouseUp );
-	var _onKeyDown = bind( this, this.onKeyDown );
-	var _onKeyUp = bind( this, this.onKeyUp );
-
-	this.domElement.addEventListener( 'contextmenu', contextmenu, false );
-	this.domElement.addEventListener( 'mousemove', _onMouseMove, false );
-
-	window.addEventListener( 'keydown', _onKeyDown, false );
-	window.addEventListener( 'keyup', _onKeyUp, false );
-
-	function bind( scope, fn ) {
-		return function () {
-			fn.apply( scope, arguments );
-		};
-	}
-	this.handleResize();
-};
+                            
