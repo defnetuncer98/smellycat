@@ -3,50 +3,88 @@
 	<head>
 		<meta charset="utf-8">
 		<title>Smelly Cat</title>
-                <link href="https://fonts.googleapis.com/css?family=Cute+Font&display=swap" rel="stylesheet">
+                <link rel="shortcut icon" href="#">                
 		<style>
-			body { margin: 0; overflow:hidden; height:100%; background-color:#3744ff;}
+                        @font-face {
+                            font-family: 'Gillattoz';
+                            src: URL('node_modules/three/examples/fonts/ttf/Gillattoz.ttf') format('truetype'),
+                            URL('node_modules/three/examples/fonts/ttf/Gillattoz.woff') format('woff'),
+                            URL('node_modules/three/examples/fonts/ttf/Gillattoz.woff2') format('woff2');
+                          }                    
+                        @font-face {
+                            font-family: 'Letter Gothic';
+                            src: URL('node_modules/three/examples/fonts/ttf/lettergothic.otf') format('truetype');
+                          }                               
+
+			body { margin: 0; overflow:hidden; height:100%;}
 			canvas { width: 100%; height: 100% }
-                        #info {
-                                position: absolute;
-                                top: 10%;
-                                right: 10%;
-                                width: 100%;
-                                text-align: right;
+                        .guitext {
+                                float:left;
                                 font-size: 200%;
                                 color:white;
                                 z-index: 100;
                                 display:none;
-                                font-family: 'Cute Font', cursive;
+                                font-family: 'Gillattoz';
+                        }                        
+                        .info {
+                                padding-left: 10px;
+                                float:left;                                
+                                font-size: 150%;
+                                color:white;
+                                z-index: 100;
+                                display:none;
+                                font-family: 'Letter Gothic';
                         }
                         #playbutton {
                                 position: absolute;
-                                top: 50%;
-                                width: 100%;
-                                text-align: center;
+                                text-align:center;
+                                top: 70%;
+                                border: 1px solid #ffffff;
+                                width: 240px;
                                 font-size: 400%;
                                 color:white;
                                 z-index: 100;
-                                display:block;
-                                font-family: 'Cute Font', cursive;
-                        }    
+                                display:none;
+                                font-family: 'Gillattoz';
+                                text-decoration:none;
+                        }  
+                        #playbutton:hover {
+                          background-color: #e7ff5a;
+                          color: white;
+                        }                        
                         #loading {
                                 position: absolute;
+                                width: 100%;
                                 height: 100%;
-                                font-size: 400%;
-                                color:white;
                                 z-index: 100;
-                                display:block;
-                                font-family: 'Cute Font', cursive;
                         }                          
+                        #loading2 {
+                                position: absolute;
+                                width: 100%;
+                                height: 100%;                                
+                                z-index: 100;
+                        }                          
+                        #hitsound {
+                                display:none;
+                        }  
+                        #breaksound {
+                                display:none;
+                        }                           
                         
 		</style>
 	</head>
 	<body>
-            <img id="loading" src="cat.gif"/>
+            <img id="loading" src="SmellyCatOpening.gif" style="display:block;"/>
+            <img id="loading2" src="SmellyCat.gif" style="display:none;"/>
             <div id="container"></div>
-            <a href=# id="playbutton">PLAY</a>
-            <div id="info">Score: 0</div>
+            <div style="align-items:center;display:flex;justify-content: center;"><a href=# id="playbutton">p l a y</a></div>
+            <div style="position:absolute;top:10%;left:10%;">
+                <div><div class="guitext" id="scoretext">s c o r e :</div><div class="info" id="info"></div></div>
+                <div><div class="guitext" id="timetext">t i m e  l e f t :</div><div class="info" id="timeinfo"></div></div>                  
+            </div>
+            <div class="info" id="painting" style="position:absolute;opacity:0.5;font-size:100%"></div>
+            <audio id="hitsound" controls> <source src="node_modules/three/examples/sounds/zapsplat_impact_wood_post_drop_concrete_ground_003_14044.mp3"></audio>
+            <audio id="breaksound" controls> <source src="node_modules/three/examples/sounds/impact_tile_debris_breaking.mp3"></audio>
             <script type="module" src="smellycat.js"></script>
             <script src="node_modules/three/examples/js/libs/ammo.js"></script>
 	</body>
