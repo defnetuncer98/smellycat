@@ -1,57 +1,75 @@
 import * as THREE from './node_modules/three/build/three.module.js';
 import { GLTFLoader } from './node_modules/three/examples/jsm/loaders/GLTFLoader.js';
 import { FBXLoader } from './node_modules/three/examples/jsm/loaders/FBXLoader.js';
+import { GUI } from './node_modules/three/examples/jsm/libs/dat.gui.module.js';
 
 //////////////////////////////
 // Game controls 
 //////////////////////////////
 var play = false;
-
+var gameovertime;
 function onPlayClick() {
-    loading.style.display = "none";
+    loading2.style.display = "none";
     container.style.display = "block";
-    
-    play=true; score=0;
+    play=true;
+    score=0;
     info.style.display="block";
-    info.innerText='Score: '+score;
+    timeinfo.style.display="block";    
+    scoretext.style.display="block";
+    timetext.style.display="block";
+    info.innerText=0;
     playbutton.style.display="none";
+    gameovertime=Math.round(5+new Date()/1000);
+    
 }
 
 function increaseScore(){
     score+=1;
-    info.innerText='Score: '+score;
+    info.innerText=score;
 }
 
-function onDocumentMouseClick( event ) {
-        event.preventDefault();
-        mouse.x = ( event.clientX / window.innerWidth ) * 2 - 1;
-        mouse.y = - ( event.clientY / window.innerHeight ) * 2 + 1;
-        raycaster.setFromCamera( mouse, camera );
-        var intersects = raycaster.intersectObjects( roomscene.children );
-        if ( intersects.length > 0 ) {
-                var object = intersects[ 0 ].object;
-                console.log(object.name);
-                if(object.name!=="mesh_1"){ // dont blow up the ground when clicked
-                      increaseScore();
-                      if(score===10) {
-                          playbutton.style.display="block";
-                          play=false;
-                          playbutton.innerHTML = "Smelly Cat WINS! Play Again?";
-                      }
-                      scene.remove(scene.getObjectByName("roomscene"));//delete room from the scene
-                      roomscene.remove(object);//delete the object from the room
-                      scene.add(roomscene);//add the room to the scene again
-            }
-        }
+function gameOver(isWin){
+    playbutton.style.display="inline-block";
+    play=false;
+    if(!isWin) playbutton.innerText = "y o u  l o s t ! r e p l a y";
+    else playbutton.innerText = "y o u  w i n ! r e p l a y";
 }
+
+function increaseTime(){
+    gameovertime+=10;
+}
+
+//function onDocumentMouseClick( event ) {
+//        event.preventDefault();
+//        mouse.x = ( event.clientX / window.innerWidth ) * 2 - 1;
+//        mouse.y = - ( event.clientY / window.innerHeight ) * 2 + 1;
+//        raycaster.setFromCamera( mouse, camera );
+//        var intersects = raycaster.intersectObjects( roomscene.children );
+//        if ( intersects.length > 0 ) {
+//                var object = intersects[ 0 ].object;
+//                scene.remove(scene.getObjectByName("roomscene"));//delete room from the scene
+//                roomscene.remove(object);//delete the object from the room
+//                scene.add(roomscene);//add the room to the scene again     
+//        }
+//}
+
 //////////////////////////////
 // Global objects   
 //////////////////////////////
 var info = document.getElementById('info');
+var painting = document.getElementById('painting');
+var timeinfo = document.getElementById('timeinfo');
+var timetext = document.getElementById('timetext');
+var scoretext = document.getElementById('scoretext');
 var container = document.getElementById('container');
 var playbutton = document.getElementById('playbutton');
 var loading = document.getElementById('loading');
+var loading2 = document.getElementById('loading2');
 playbutton.addEventListener('click', onPlayClick);
+var hitsound = document.getElementById('hitsound');
+var breaksound = document.getElementById('breaksound');
+
+
 var score = 0;
 var mouse = new THREE.Vector2();
 var raycaster = new THREE.Raycaster();
@@ -74,22 +92,32 @@ var shiftisup = true;
 var idle = true;
 var transformAux1;
 var physicsWorld;
-var raycaster = new THREE.Raycaster();
 var ballMaterial = new THREE.MeshPhongMaterial( { color: 0x202020 } );
 var pos = new THREE.Vector3();
 var quat = new THREE.Quaternion();
 var margin = 0.05;
 var rigidBodies = [];
 var roomisloaded = false;
-var gravityConstant = - 20;
+var gravityConstant = - 9.8;
 var mouseCoords = new THREE.Vector2();
-var roomscene = new THREE.Group();  // all room is in here
+var roomscene = new THREE.Group();
+var paintings = new THREE.Group();
 var bird;
 var flying=false;
 var flyingleft=true;
 var stilljumping=0;
-var didobjectfall = [false, false, false, false, false, false, false, false, false ]; // for now there are only two objects that can fall
-
+var didobjectfall = [false, false, false, false, false, false, false, false, false, false, false, false ]; // for now there are only two objects that can fall
+var vasefell=0;
+var vasemixer;
+var vase;
+var mousemixers = [];
+var mice = new THREE.Group();
+var starttime;
+var timeleft;
+var params = {
+    light:false,
+    night:false,
+};
 //
 //////////////////////////////
 // Information about our 3D models and units
@@ -109,7 +137,7 @@ var MODELS = [
             loader:"gltf",
             path: "./node_modules/three/examples/models/gltf/redcoat-robin/scene.gltf",
             //position: { x: -1.1, y: 1, z: -0.5 }, //on the chair
-            position: { x: 0.4, y: 1.32, z: -0.22 }, //on the bed
+            position: { x: 0.53, y: 1.36, z: -0.22 }, //on the bed
             rotation: { x: 0, y: 0, z: 0},
             scale: 0.0002, 
             animationName: 3 // Name of animation to run            
@@ -120,7 +148,7 @@ var MODELS = [
             path: "./node_modules/three/examples/models/gltf/BedroomInArles/bedroom.glb",
             position: { x: 0, y: 0, z: 0 }, // Where to put the unit in the scene
             scale: 20, 
-        },
+        },        
         {
             name: "Palette", 
             loader: "gltf",
@@ -130,6 +158,7 @@ var MODELS = [
             rotation: {x:0, y:0, z:0},
             scale: 1,
         },    
+        
         {
             name: "Brush", 
             loader: "gltf",
@@ -138,11 +167,128 @@ var MODELS = [
             shape: {x: 0.1, y: 0.2, z: 0.02},
             rotation: {x: 0, y:0, z:1},
             scale: 0.1, 
-        },               
+        },        
+        {
+            name: "Shoes", 
+            loader: "gltf",
+            path: "./node_modules/three/examples/models/shoes.glb",
+            position: { x:1.0, y:0.03, z:-1.0 }, // Where to put the unit in the scene
+            shape: {x: 0.1, y: 0.01, z: 0.1},
+            rotation: {x: 0, y:0, z:0},
+            scale: 0.25, 
+        },   
+        {
+            name: "Roundtable", 
+            loader: "gltf",
+            path: "./node_modules/three/examples/models/roundtable.glb",
+            position: { x:-1.0, y:0.5, z: 1.0 }, // Where to put the unit in the scene
+            shape: {x: 0.02, y: 0.02, z: 0.02},
+            rotation: {x: 0, y:0, z:0},
+            scale: 0.008, 
+        },   
+        {
+            name: "Vase", 
+            loader: "gltf",
+            path: "./node_modules/three/examples/models/gltf/vase/scene.gltf",
+            position: { x:-0.8, y:0.72, z: 1.1 }, // Where to put the unit in the scene
+            shape: {x: 0.15, y: 0.02, z: 0.15},
+            rotation: {x: 0, y:0, z:0},
+            scale: 0.02, 
+        },   
+        {
+            name: "Sunflower", 
+            loader: "gltf",
+            path: "./node_modules/three/examples/models/zonnebloem.glb",
+            position: { x:-0.75, y:0.8, z: 1.2 }, // Where to put the unit in the scene
+            shape: {x: 0.06, y: 0.1, z: 0.06},
+            rotation: {x: 0, y:3.14, z:0},
+            scale: 0.6, 
+        },   
+  
+
+        {
+            name: "Table", 
+            loader: "gltf",
+            path: "./node_modules/three/examples/models/table.glb",
+            position: { x:-0.95, y:0.3, z: -1.68 }, // Where to put the unit in the scene
+            shape: {x: 0.0, y: 0.0, z: 0.0},
+            rotation: {x: 0, y:0.0, z:0},
+            scale: 1.0, 
+        },
+        
+        {
+            name: "Chair1", 
+            loader: "gltf",
+            path: "./node_modules/three/examples/models/chair.glb",
+            position: { x:-1.25, y:0.42, z: -0.45 }, // Where to put the unit in the scene
+            shape: {x: 0.0, y: 0.0, z: 0.0},
+            rotation: {x: 0, y:1.57, z:0},
+            scale: 1.0, 
+        },  
+        {
+            name: "Chair2", 
+            loader: "gltf",
+            path: "./node_modules/three/examples/models/chair.glb",
+            position: { x:-0.1, y:0.42, z: -2.0 }, // Where to put the unit in the scene
+            shape: {x: 0.0, y: 0.0, z: 0.0},
+            rotation: {x: 0, y:1, z:0},
+            scale: 1.0, 
+        },  
+        
+        {
+            name: "Bed", 
+            loader: "gltf",
+            path: "./node_modules/three/examples/models/bed.glb",
+            position: { x:0, y:0.2, z: 0 }, // Where to put the unit in the scene
+            shape: {x: 0.0, y: 0.0, z: 0.0},
+            rotation: {x: 0, y:0, z:0},
+            scale: 1.0, 
+        },  
+        {
+            name: "Tableobject1", 
+            loader: "gltf",
+            path: "./node_modules/three/examples/models/tableitem1.glb",
+            position: {  x:-1.12, y:1, z: -1.9  }, // Where to put the unit in the scene
+            shape: {x: 0.01, y: 0.01, z: 0.01},
+            rotation: {x: 0, y:0.0, z:0},
+            scale: 1.0, 
+        },
+        
+        {
+            name: "Tableobject3", 
+            loader: "gltf",
+            path: "./node_modules/three/examples/models/tableitem3.glb",
+            position: {  x:-0.9, y:1, z: -1.9  }, // Where to put the unit in the scene
+            shape: {x: 0.01, y: 0.01, z: 0.01},
+            rotation: {x: 0, y:0.0, z:0},
+            scale: 0.7, 
+        },
+        
+        
+        {
+            name: "Tableobject4", 
+            loader: "gltf",
+            path: "./node_modules/three/examples/models/tableitem4.glb",
+            position: { x:-1.07, y:1.2, z: -1.68  }, // Where to put the unit in the scene
+            shape: {x: 0.02, y: 0.02, z: 0.02},
+            rotation: {x: 0, y:0.0, z:0},
+            scale: 1.0, 
+        },
+        
+        {
+            name: "Tableobject5", 
+            loader: "gltf",
+            path: "./node_modules/three/examples/models/tableitem4.glb",
+            position: { x:-0.77, y:0.8, z: -1.72 }, // Where to put the unit in the scene
+            shape: {x: 0.01, y: 0.01, z: 0.01},
+            rotation: {x: 0, y:0.0, z:0},
+            scale: 1.0, 
+        },
 ];
 
 Ammo().then( function ( AmmoLib ) {
     Ammo = AmmoLib;
+    starttime=new Date();
     init();
     animate();
 } );
@@ -167,8 +313,12 @@ function initPhysics() {
 
 function createInvisibleCollisionBody( sx, sy, sz, pos, quat, material ) {
         var threeObject = new THREE.Mesh( new THREE.BoxBufferGeometry( sx, sy, sz, 1, 1, 1 ), material );
+        threeObject.castShadow = true;
+        threeObject.receiveShadow = true;                 
         var shape = new Ammo.btBoxShape( new Ammo.btVector3( sx * 0.5, sy * 0.5, sz * 0.5 ) );
         shape.setMargin( margin );
+        threeObject.opacity = 1.0;
+        //scene.add(threeObject);
         createRigidBody( threeObject, shape, 0, pos, quat ); // has zero mass
         return threeObject;
 }
@@ -186,8 +336,8 @@ function createRigidBody( threeObject, physicsShape, mass, pos, quat ) {
         var rbInfo = new Ammo.btRigidBodyConstructionInfo( mass, motionState, physicsShape, localInertia );
         var body = new Ammo.btRigidBody( rbInfo );
         threeObject.userData.physicsBody = body;
-        threeObject.castShadow = true;
-        threeObject.receiveShadow = true;         
+        //threeObject.castShadow = true;
+        //threeObject.receiveShadow = true;         
         if ( mass > 0 ) {
                 scene.add( threeObject );
                 rigidBodies.push( threeObject );
@@ -195,6 +345,12 @@ function createRigidBody( threeObject, physicsShape, mass, pos, quat ) {
                     controls = new ThirdPersonControls( threeObject, renderer.domElement );       
                     camera.position.copy(new THREE.Vector3(threeObject.x,threeObject.y+1,threeObject.z-1.5));                
                 }
+                else if(threeObject.name==="Chair1") didobjectfall[rigidBodies.length-1] = true;
+                else if(threeObject.name==="Chair2") didobjectfall[rigidBodies.length-1] = true;
+                else if(threeObject.name==="Bed") didobjectfall[rigidBodies.length-1] = true;
+                else if(threeObject.name==="Shoes") didobjectfall[rigidBodies.length-1] = true;
+                else if(threeObject.name==="Table") didobjectfall[rigidBodies.length-1] = true;
+                else if(threeObject.name==="Roundtable") didobjectfall[rigidBodies.length-1] = true;
         }
         // Disable deactivation
         body.setActivationState( 4 );
@@ -209,7 +365,7 @@ function createRigidBody( threeObject, physicsShape, mass, pos, quat ) {
  */
 function loadModels() {
         // create ground
-        pos.set( 0, -0.4, 0 );
+        pos.set( 0, -0.45, 0 );
         quat.set( 0, 0, 0, 1 );
         createInvisibleCollisionBody( 100, 1, 100, pos, quat, new THREE.MeshPhongMaterial( {color:'#808080'} ) );
         
@@ -250,6 +406,7 @@ function loadGLTFModel( model ) {
                 gltf.scene.traverse( function ( object ) {
                         if ( object.isMesh ) {
                                 object.castShadow = true;
+                                object.receiveShadow = true;
                         }
                 } );
                 if ( model.position ) {
@@ -262,11 +419,15 @@ function loadGLTFModel( model ) {
                         gltf.scene.rotation.copy( new THREE.Euler( model.rotation.x,model.rotation.y,model.rotation.z));
                 }
                 var ballMass = 10;
+                if (model.name == "Roundtable" || model.name == "Chair1" || model.name == "Chair2" || model.name == "Table" || model.name == "Bed")
+                    ballMass = 10000;
+                gltf.scene.name=model.name;
                 var ballShape = new Ammo.btBoxShape( new Ammo.btVector3( model.shape.x, model.shape.y, model.shape.z )  );
                 ballShape.setMargin( 0.0 );
                 var body = createRigidBody( gltf.scene, ballShape, ballMass, gltf.scene.position, gltf.scene.quaternion );
                 body.setFriction( 0.5 );
                 scene.add(gltf.scene);
+                if(model.name=="Vase") vase=gltf;
         });
 }
 function loadRoomModel( model ) {
@@ -274,83 +435,106 @@ function loadRoomModel( model ) {
         loader.load( model.path, function ( gltf ) {
                 
                 // bed
-                pos.set( 0.8, 0, -1.6 );
+                pos.set( 1.1, 0.6, -1.29 );
                 quat.set( 0, 0, 0, 1 );
-                createInvisibleCollisionBody( 1.2, 1.63, 3, pos, quat, new THREE.MeshPhongMaterial( {color:'#808080'} ) );
+                createInvisibleCollisionBody( 1.25, 0.55, 2.0, pos, quat, new THREE.MeshPhongMaterial( {color:'#808080'} ) );
                 
                 // bedend
-                pos.set( 0.8, 0, 0.0 );
+                pos.set( 1.12, 0.75, -0.24 );
                 quat.set( 0, 0, 0, 1 );
-                createInvisibleCollisionBody( 1.2, 3, 0.01, pos, quat, new THREE.MeshPhongMaterial( {color:'#808080'} ) );
+                createInvisibleCollisionBody( 1.25, 1.1, 0.1, pos, quat, new THREE.MeshPhongMaterial( {color:'#808080'} ) );
                 
                 // bedhead
-                pos.set( 0.8, 0, -2.26 );
+                pos.set( 1.12, 0.75, -2.30 );
                 quat.set( 0, 0, 0, 1 );
-                createInvisibleCollisionBody( 1.2, 3, 0.01, pos, quat, new THREE.MeshPhongMaterial( {color:'#808080'} ) );
+                createInvisibleCollisionBody( 1.25, 1.1, 0.1, pos, quat, new THREE.MeshPhongMaterial( {color:'#808080'} ) );
                 
                 // roof
-                // bazen kedi çatıya ışınlanıyor
-                pos.set( 0, 3, 0 );
-                quat.set( 0, 0, 0, 1 );
+                pos.set( 0, 3.1, 0 );
+                quat.set( 0, 0, -0.1, 1 );
                 createInvisibleCollisionBody( 5, 0.1, 5, pos, quat, new THREE.MeshPhongMaterial( {color:'#808080'} ) );
                 
             
                 // wall near bed
-                pos.set( 2, 0, 3 );
+                pos.set( 1.90, 2, 0 );
                 quat.set( 0, 0, 0, 1 );
-                createInvisibleCollisionBody( 1, 10, 10, pos, quat, new THREE.MeshPhongMaterial( {color:'#808080'} ) );
+                createInvisibleCollisionBody( 0.1, 5, 5, pos, quat, new THREE.MeshPhongMaterial( {color:'#808080'} ) );
+                
                 // opposite wall
-                pos.set( -2.1, 0, 0 );
+                pos.set( -1.72, 2, 0 );
                 quat.set( 0, 0, 0, 1 );
-                createInvisibleCollisionBody( 1, 15, 10, pos, quat, new THREE.MeshPhongMaterial( {color:'#808080'} ) );
+                createInvisibleCollisionBody( 0.1, 5, 5, pos, quat, new THREE.MeshPhongMaterial( {color:'#808080'} ) );
                 
-                
+            
                 // wall with window
-                pos.set( 0, 0, -3.3 );
+                pos.set( -0.32, 2, -2.65 );
                 quat.set( 0, 0, 0, 1 );
-                createInvisibleCollisionBody( 10, 10, 1, pos, quat, new THREE.MeshPhongMaterial( {color:'#808080'} ) );
+                createInvisibleCollisionBody( 1, 1.7, 0.01, pos, quat, new THREE.MeshPhongMaterial( {color:'#808080'} ) );
+                
+                pos.set( -1.8, 2, -2.65 );
+                quat.set( 0, 0, 0, 1 );
+                scene.add(createInvisibleCollisionBody( 2, 5, 0.01, pos, quat, new THREE.MeshPhongMaterial( {color:'#000000'} ) ));
+                
+                pos.set( 1.1, 2, -2.65 );
+                quat.set( 0, 0, 0, 1 );
+                scene.add(createInvisibleCollisionBody( 2, 5, 0.01, pos, quat, new THREE.MeshPhongMaterial( {color:'#000000'} ) ));
+                
+                pos.set( 0, 0.6, -2.65 );
+                quat.set( 0, 0, 0, 1 );
+                scene.add(createInvisibleCollisionBody( 5, 1.2, 0.01, pos, quat, new THREE.MeshPhongMaterial( {color:'#000000'} ) ));
+                
+                pos.set( 0, 5.6, -2.65 );
+                quat.set( 0, 0, 0, 1 );
+                scene.add(createInvisibleCollisionBody( 5, 5, 0.01, pos, quat, new THREE.MeshPhongMaterial( {color:'#000000'} ) ));
+                
                 // opposite wall
-                pos.set( 0, 0, 2.5 );
+                pos.set( 0, 2, 1.82 );
                 quat.set( 0, 0, 0, 1 );
-                createInvisibleCollisionBody( 10, 10, 1, pos, quat, new THREE.MeshPhongMaterial( {color:'#808080'} ) );                
+                createInvisibleCollisionBody( 10, 10, 0.1, pos, quat, new THREE.MeshPhongMaterial( {color:'#808080'} ) );                
 
 
                 // chair by the wall
-                pos.set( -1.3, 0, -0.4 );
+                pos.set( -1.25, 0.42, -0.45 );
                 quat.set( 0, 0, 0, 1 );
-                createInvisibleCollisionBody( 0.5, 1.1, 0.5, pos, quat, new THREE.MeshPhongMaterial( {color:'#808080'} ) );                                 
+                createInvisibleCollisionBody( 0.42, 0.35, 0.42, pos, quat, new THREE.MeshPhongMaterial( {color:'#808080'} ) );                                 
 
                 // chair by the bed
-                pos.set( 0, 0, -2 );
-                quat.set( 0, 1, 0, 1 );
-                createInvisibleCollisionBody( 0.5, 1.1, 0.5, pos, quat, new THREE.MeshPhongMaterial( {color:'#808080'} ) );                                 
+                pos.set( -0.09, 0.42, -1.99 );
+                quat.set( 0, 0.45, 0, 1 );
+                createInvisibleCollisionBody( 0.42, 0.35, 0.42, pos, quat, new THREE.MeshPhongMaterial( {color:'#808080'} ) );                                 
 
-            
-                // table by the bed
-                pos.set( -0.5, 1, -2 );
-                quat.set( 0, 0, 0, 1 );
-                createInvisibleCollisionBody( 1, 0.2, 1, pos, quat, new THREE.MeshPhongMaterial( {color:'#808080'} ) );                                 
-            
+                 // table by the bed
+                pos.set( -0.93, 0.73, -1.87 );
+                quat.set( 0, -0.48, 0, 1 );
+                createInvisibleCollisionBody( 0.6, 0.3, 0.6, pos, quat, new THREE.MeshPhongMaterial( {color:'#808080'} ) );  
+                
+                // round table
+                pos.set( -1.0, 0.6, 1.0 );
+                quat.set( 0, 0.0, 0, 1 );
+                createInvisibleCollisionBody( 0.75, 0.1, 0.75, pos, quat, new THREE.MeshPhongMaterial( {color:'#808080'} ) );  
+              
                 var gltfscene = gltf.scene;
                 var yey = [];
                 
                 // appearently these two loops are necessary
                 gltfscene.traverse( function ( object ) {
                         if ( object.isMesh) {
-                            yey.push(object);
                             object.receiveShadow = true;
-                            //object.castShadow = true;
+                            if(object.name=="mesh_15" || object.name=="mesh_14") object.castShadow = true;
+                            yey.push(object);
                         }
                 } );
                 
                 yey.forEach( function (object) {
                     roomscene.add(object);
+                    if(object.name=="mesh_2" || object.name=="mesh_3" || object.name=="mesh_5" || object.name=="mesh_6" || object.name=="mesh_7" || object.name=="mesh_8") paintings.add(object);
                 });
             
                 roomscene.name = "roomscene";
-                roomisloaded=true;
+                paintings.name = "paintings";
                 scene.add(roomscene);
-            
+                scene.add(paintings);
+                roomisloaded=true;            
                 } );
 }
 
@@ -419,16 +603,38 @@ function loadCat( model ) {
 function animate() {
         // Get the time elapsed since the last frame
         var delta = clock.getDelta();
-
         // models are loaded and play is pressed
-        if(roomisloaded && rigidBodies.length>2 && play){
+        if(loading.style.display=="block") {
+            var timediff=(new Date()-starttime)/1000;
+            if(timediff>3){
+                loading.style.display="none";
+                loading2.style.display="block";
+                
+            }
+        }
+        if(rigidBodies.length>6 && !play) {
+            playbutton.style.display="inline-block";
+            
+        }
+        if(roomisloaded && rigidBodies.length>6 && play){
+            timeleft=Math.round(gameovertime-(new Date()/1000));
+            timeinfo.innerText=timeleft;
+            if(timeleft==0) {gameOver(false); return;}
             if(!idle) catmixer.update(delta);
             controls.update( delta );  
             if(flying)birdmixer.update(delta*0.1); // bird's animation needs to be slowed then when flying
             else birdmixer.update(delta);
+            if(vasefell>0){
+                vasemixer.update(delta);
+                vasefell-=1;
+            }
+            for ( var i = 0; i < mousemixers.length; ++ i ) {
+                    mousemixers[ i ].update( delta );
+            }        
         }
-
-        requestAnimationFrame( animate );
+        setTimeout( function() {
+            requestAnimationFrame( animate );
+        }, 1000 / 30 );
         renderer.render( scene, camera );
 }
 
@@ -449,6 +655,7 @@ function initRenderer() {
         renderer.gammaFactor = 2.2;
         renderer.shadowMap.enabled = true;
         renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+        //renderer.physicallyCorrectLights=true;
         container.appendChild( renderer.domElement );
 }
 /**
@@ -461,22 +668,49 @@ function initScene() {
         clock = new THREE.Clock();
         scene = new THREE.Scene();
       
-        scene.background = new THREE.Color( 0x3744ff );
-        var hemiLight = new THREE.HemisphereLight( 0xffffff, 0x444444 );
-        hemiLight.position.set( 0, 20, 0 );
+        scene.background = new THREE.Color( 0x000000 );
+        
+        var hemiLight = new THREE.HemisphereLight( 0xffffff, 0x444444, 1 );
+        hemiLight.position.set( 0, 2.0, 0 );
         scene.add( hemiLight );
+        
         var dirLight = new THREE.DirectionalLight( 0xffffff );
-        dirLight.position.set( - 3, 10, - 10 );
+        dirLight.position.set( 0, 4.0, -5 );
         dirLight.castShadow = true;
-        dirLight.shadow.camera.top = 10;
-        dirLight.shadow.camera.bottom = - 10;
-        dirLight.shadow.camera.left = - 10;
-        dirLight.shadow.camera.right = 10;
-        dirLight.shadow.camera.near = 0.1;
-        dirLight.shadow.camera.far = 40;
+        dirLight.shadow.camera.top = 2;
+        dirLight.shadow.camera.bottom = - 2;
+        dirLight.shadow.camera.left = - 2;
+        dirLight.shadow.camera.right = 2;
+        //dirLight.shadow.camera.near = 0.1;
+        //dirLight.shadow.camera.far = 40;
         scene.add( dirLight );
+
+        const light = new THREE.PointLight(0xFFFFFF, 10, 4, 2);
+        light.castShadow = true;
+        light.position.set(0, 3, 0);
+        light.shadow.camera.top = 2;
+        light.shadow.camera.bottom = - 2;
+        light.shadow.camera.left = - 2;
+        light.shadow.camera.right = 2;
+        light.shadow.camera.zoom = 1;
+        //light.shadow.camera.near = 0.1;
+        //light.shadow.camera.far = 40;        
+        scene.add(light);
+        if(!params.light) light.visible = ! light.visible;
+       
+        function updateCamera(){light.shadow.camera.updateProjectionMatrix();}
+     
+        const gui = new GUI();
+        
+        const folder = gui.addFolder("light settings");
+        folder.add(params,'night').onChange(function(){hemiLight.visible = ! hemiLight.visible; light.visible = ! light.visible;dirLight.visible = ! dirLight.visible;});
+        folder.add(light, 'intensity', 0, 10, 0.01);                
+        folder.add(light.position, 'x', - 1.5, 1.7).onChange(updateCamera);
+        folder.add(light.position, 'y', 0.2, 2.8).onChange(updateCamera);
+        folder.add(light.position, 'z', - 2.5, 1.6).onChange(updateCamera);
+        
         window.addEventListener( 'resize', onWindowResize, false );
-        window.addEventListener( 'click', onDocumentMouseClick, false );
+        //window.addEventListener( 'click', onDocumentMouseClick, false );
 }
 
 /**
@@ -534,10 +768,40 @@ function ThirdPersonControls ( object, domElement ) {
 			this.mouseX = event.pageX - this.domElement.offsetLeft - this.viewHalfX;
 			this.mouseY = event.pageY - this.domElement.offsetTop - this.viewHalfY;
 		}
+                mouse.x = ( event.clientX / window.innerWidth ) * 2 - 1;
+                mouse.y = - ( event.clientY / window.innerHeight ) * 2 + 1;
+                raycaster.setFromCamera( mouse, camera );
+                var intersects = raycaster.intersectObjects( paintings.children );
+                if ( intersects.length > 0 ) {
+                        var object = intersects[ 0 ].object;
+                        painting.style.top=event.pageY +10+'px';
+                        painting.style.left=event.pageX +10+'px';
+                        painting.style.display="block";
 
+                        if(object.name=="mesh_2") {
+                            painting.innerText="The Starry Night - 1889";
+                        }
+                        else if(object.name=="mesh_5") {
+                            painting.innerText="Self-portrait - 1889";
+                        }
+                        else if(object.name=="mesh_3") {
+                            painting.innerText="Cafe Terrace at Night - 1888";
+                        }
+                        else if(object.name=="mesh_6") {
+                            painting.innerText="Portrait of Eugene Boch- 1888";
+                        }
+                        else if(object.name=="mesh_7") {
+                            painting.innerText="Avenue of Poplars - 1884";
+                        }
+                        else if(object.name=="mesh_8") {
+                            painting.innerText="Starry Night Over the Rhone - 1888";
+                        }
+                }
+                else painting.style.display="none";
 	};
 
 	this.onKeyDown = function ( event ) {
+                
 		switch ( event.keyCode ) {
 			case 38: /*up*/
 			case 87: /*W*/ this.moveForward = true; break;
@@ -551,12 +815,15 @@ function ThirdPersonControls ( object, domElement ) {
 			case 39: /*right*/
 			case 68: /*D*/ this.moveLeft = true; break;
 
-                        case 16: /*Shift*/ shiftisup = false; break;
-                        case 32: /*Space*/ space = true; break;
+                        case 16: /*Shift*/ event.preventDefault(); shiftisup = false; break;
+                        case 32: /*Space*/ {
+                                event.preventDefault();
+                                space = true; break;}
 		}
 	};
 
 	this.onKeyUp = function ( event ) {
+                event.preventDefault();
 		switch ( event.keyCode ) {
 			case 38: /*up*/
 			case 87: /*W*/ this.moveForward = false; break;
@@ -578,19 +845,18 @@ function ThirdPersonControls ( object, domElement ) {
 		return function update( delta ) {
 
                         var actualMoveSpeed  = delta * this.movementSpeed;
-                        
-                        if(!shiftisup) actualMoveSpeed = delta * this.movementSpeed * 3;// Increase speed when shift is down - but also increases jump velocity ??
+                        if(!shiftisup) actualMoveSpeed = delta * this.movementSpeed * 1.5;// Increase speed when shift is down - but also increases jump velocity ??
 
                         var velox=0;
                         var veloz=0;
                         
                         if ( this.moveLeft) { //A
                             idle=false; 
-                            rotay-=0.05;
+                            rotay-=0.1;
                         }
 			else if ( this.moveRight ) { //D
                             idle=false;
-                            rotay+=0.05;                            
+                            rotay+=0.1;                            
                         }
                         else { //IDLE
                             idle=true;
@@ -598,13 +864,13 @@ function ThirdPersonControls ( object, domElement ) {
 
 			if ( this.moveBackward) { //S
                             idle=false; 
-                            veloz = -actualMoveSpeed*Math.cos(rotay);
-                            velox = -actualMoveSpeed*Math.sin(rotay);
+                            veloz = -actualMoveSpeed*Math.cos(rotay)/2.2;
+                            velox = -actualMoveSpeed*Math.sin(rotay)/2.2;
                         }
 			else if ( this.moveForward ) { //W
                             idle=false;
-                            veloz = actualMoveSpeed*Math.cos(rotay);
-                            velox = actualMoveSpeed*Math.sin(rotay);
+                            veloz = actualMoveSpeed*Math.cos(rotay)/2.2;
+                            velox = actualMoveSpeed*Math.sin(rotay)/2.2;
                         }
                         else{ //IDLE
                             if(!this.moveLeft && !this.moveRight) idle=true;
@@ -615,8 +881,8 @@ function ThirdPersonControls ( object, domElement ) {
                         // JUMP CAT 
                         if(space) {
                             if(stilljumping==0) {
-                                stilljumping=50; // to prevent multiple jumps count down from 50
-                                this.object.userData.physicsBody.setLinearVelocity(new Ammo.btVector3( 0, actualMoveSpeed*10, 0));
+                                stilljumping=21; // to prevent multiple jumps count down from 50
+                                this.object.userData.physicsBody.setLinearVelocity(new Ammo.btVector3( 0, 3+actualMoveSpeed*6, 0));
                             }
                             space=false;
                         }
@@ -629,7 +895,7 @@ function ThirdPersonControls ( object, domElement ) {
                         // CAT IS IN THE RIGIDBODIES ARRAY WITH NAME "thecat"
                         // Don't update cats quaternion since cats land on its legs.
                         // if an object other than cat falls to the ground, increase score and mark it in the array didobjectfall
-                        physicsWorld.stepSimulation( delta, 10 );
+                        physicsWorld.stepSimulation( delta*2.5, 10 );
                         for ( var i = 0, il = rigidBodies.length; i < il; i ++ ) {
                                 var objThree = rigidBodies[ i ];
                                 var objPhys = objThree.userData.physicsBody;
@@ -642,9 +908,21 @@ function ThirdPersonControls ( object, domElement ) {
                                         objThree.position.set( p.x(), p.y(), p.z() );
                                         if(objThree.name!="thecat") {
                                             objThree.quaternion.set( q.x(), q.y(), q.z(), q.w() );
-                                            if(objThree.position.y<0.5 && !didobjectfall[i]) {
+                                            if(objThree.position.y<0.2 && !didobjectfall[i]) {
                                                 didobjectfall[i]=true;
-                                                increaseScore();                                        
+                                                increaseScore();
+                                                if(score===10) gameOver(true);                                                
+                                                if(objThree.name=="Vase"){
+                                                    var mixer = new THREE.AnimationMixer( vase.scene );
+                                                    var action = mixer.clipAction(vase.animations[0]);
+                                                    action.play();
+                                                    vasefell=50;
+                                                    vasemixer=mixer;
+                                                    breaksound.play();
+                                                }
+                                                else{
+                                                    hitsound.play();
+                                                }
                                             }
                                         }
                                 }
@@ -653,9 +931,9 @@ function ThirdPersonControls ( object, domElement ) {
                         this.object.rotation.y = rotay;
 
                         // UPDATE CAMERA
-                        var deltacamera = new THREE.Vector3(this.object.position.x+Math.sin(Math.PI*3/2-this.mouseX*0.002)*1.5, 
+                        var deltacamera = new THREE.Vector3(this.object.position.x+Math.sin(Math.PI*3/2-this.mouseX*0.004)*1.5, 
                                                             this.object.position.y+1+Math.sin(this.mouseY*0.002), 
-                                                            this.object.position.z+Math.cos(Math.PI*3/2-this.mouseX*0.002)*1.5)
+                                                            this.object.position.z+Math.cos(Math.PI*3/2-this.mouseX*0.004)*1.5)
                         
                         // avoid camera from going out of the room
 //                        deltacamera.x=Math.max(deltacamera.x,-1.0);
@@ -683,7 +961,7 @@ function ThirdPersonControls ( object, domElement ) {
                         }
                         else if(flying){
                             if(flyingleft) { 
-                                bird.scene.position.z-=0.01;
+                                bird.scene.position.z-=0.02;
                                 if(bird.scene.position.z<-2){
                                     flying=false;
                                     changeBirdsAnimation(3); // stop
