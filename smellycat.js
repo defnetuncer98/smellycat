@@ -145,7 +145,7 @@ var MODELS = [
         {
             name: "BedroomInArles", 
             loader: "gltf",
-            path: "./node_modules/three/examples/models/gltf/BedroomInArles/bedroom.glb",
+            path: "./node_modules/three/examples/models/bedroom.glb",
             position: { x: 0, y: 0, z: 0 }, // Where to put the unit in the scene
             scale: 20, 
         },        
