@@ -2,9 +2,13 @@ import * as THREE from './node_modules/three/build/three.module.js';
 import { GLTFLoader } from './node_modules/three/examples/jsm/loaders/GLTFLoader.js';
 import { FBXLoader } from './node_modules/three/examples/jsm/loaders/FBXLoader.js';
 import { GUI } from './node_modules/three/examples/jsm/libs/dat.gui.module.js';
+import { EffectComposer } from './node_modules/three/examples/jsm/postprocessing/EffectComposer.js';
+import { RenderPass } from './node_modules/three/examples/jsm/postprocessing/RenderPass.js';
+import { UnrealBloomPass } from './node_modules/three/examples/jsm/postprocessing/UnrealBloomPass.js';
+import { OutlineEffect } from './node_modules/three/examples/jsm/effects/OutlineEffect.js';
 
 //////////////////////////////
-// Game controls 
+// Game controls effect = new OutlineEffect( renderer );
 //////////////////////////////
 var play = false;
 var gameovertime;
@@ -53,10 +57,26 @@ function increaseTime(){
 //        }
 //}
 
+
+function displayinstructions(){
+    if(escispressed) {
+        startTime();
+        instructions.style.display='none';
+        escispressed=false;
+    }
+    else{
+        escispressed=true;
+        stopTime();
+        instructions.style.display='block';
+    }
+}
+
 //////////////////////////////
 // Global objects   
 //////////////////////////////
 var info = document.getElementById('info');
+var instructions = document.getElementById('instructions');
+var catpaw = document.getElementById('catpaw');
 var painting = document.getElementById('painting');
 var timeinfo = document.getElementById('timeinfo');
 var timetext = document.getElementById('timetext');
@@ -66,10 +86,13 @@ var playbutton = document.getElementById('playbutton');
 var loading = document.getElementById('loading');
 var loading2 = document.getElementById('loading2');
 playbutton.addEventListener('click', onPlayClick);
+catpaw.addEventListener('click', displayinstructions);
 var hitsound = document.getElementById('hitsound');
 var breaksound = document.getElementById('breaksound');
 
-
+var firsttime=true;
+var gui;
+var escispressed = false;
 var score = 0;
 var mouse = new THREE.Vector2();
 var raycaster = new THREE.Raycaster();
@@ -92,7 +115,6 @@ var shiftisup = true;
 var idle = true;
 var transformAux1;
 var physicsWorld;
-var ballMaterial = new THREE.MeshPhongMaterial( { color: 0x202020 } );
 var pos = new THREE.Vector3();
 var quat = new THREE.Quaternion();
 var margin = 0.05;
@@ -114,10 +136,23 @@ var mousemixers = [];
 var mice = new THREE.Group();
 var starttime;
 var timeleft;
+var pausedstart;
 var params = {
     light:false,
     night:false,
+    exposure: 0.6,
+    bloomStrength: 1,
+    bloomThreshold: 0.3,
+    shading: 'none',
+    glow:false,
+    toon:false,
+    phong: false,
+    depth: false,
+    rainbow: false,
+    music:true,
+    sound:true,
 };
+var outlineeffect;
 //
 //////////////////////////////
 // Information about our 3D models and units
@@ -318,7 +353,6 @@ function createInvisibleCollisionBody( sx, sy, sz, pos, quat, material ) {
         var shape = new Ammo.btBoxShape( new Ammo.btVector3( sx * 0.5, sy * 0.5, sz * 0.5 ) );
         shape.setMargin( margin );
         threeObject.opacity = 1.0;
-        //scene.add(threeObject);
         createRigidBody( threeObject, shape, 0, pos, quat ); // has zero mass
         return threeObject;
 }
@@ -367,7 +401,7 @@ function loadModels() {
         // create ground
         pos.set( 0, -0.45, 0 );
         quat.set( 0, 0, 0, 1 );
-        createInvisibleCollisionBody( 100, 1, 100, pos, quat, new THREE.MeshPhongMaterial( {color:'#808080'} ) );
+        createInvisibleCollisionBody( 100, 1, 100, pos, quat, new THREE.MeshStandardMaterial( {color:'#808080'} ) );
         
         for ( var i = 0; i < MODELS.length; ++ i ) {
                 var m = MODELS[ i ];
@@ -402,13 +436,19 @@ function loadBird( model ) {
 
 function loadGLTFModel( model ) {
         var loader = new GLTFLoader(); 
-        loader.load( model.path, function ( gltf ) {
+        loader.load( model.path, function ( gltf ) {       
+                
                 gltf.scene.traverse( function ( object ) {
                         if ( object.isMesh ) {
                                 object.castShadow = true;
                                 object.receiveShadow = true;
+                                //object.material.emissiveIntensity = 5;
+                                var material = new THREE.MeshStandardMaterial( { map:object.material.map } );                                
+                                object.material = material;
+                                object.material.flatShading=true;
                         }
-                } );
+                } );      
+                
                 if ( model.position ) {
                         gltf.scene.position.copy(  new THREE.Vector3( model.position.x, model.position.y, model.position.z ));
                 }
@@ -437,81 +477,81 @@ function loadRoomModel( model ) {
                 // bed
                 pos.set( 1.1, 0.6, -1.29 );
                 quat.set( 0, 0, 0, 1 );
-                createInvisibleCollisionBody( 1.25, 0.55, 2.0, pos, quat, new THREE.MeshPhongMaterial( {color:'#808080'} ) );
+                createInvisibleCollisionBody( 1.25, 0.55, 2.0, pos, quat, new THREE.MeshStandardMaterial( {color:'#808080'} ) );
                 
                 // bedend
                 pos.set( 1.12, 0.75, -0.24 );
                 quat.set( 0, 0, 0, 1 );
-                createInvisibleCollisionBody( 1.25, 1.1, 0.1, pos, quat, new THREE.MeshPhongMaterial( {color:'#808080'} ) );
+                createInvisibleCollisionBody( 1.25, 1.1, 0.1, pos, quat, new THREE.MeshStandardMaterial( {color:'#808080'} ) );
                 
                 // bedhead
                 pos.set( 1.12, 0.75, -2.30 );
                 quat.set( 0, 0, 0, 1 );
-                createInvisibleCollisionBody( 1.25, 1.1, 0.1, pos, quat, new THREE.MeshPhongMaterial( {color:'#808080'} ) );
+                createInvisibleCollisionBody( 1.25, 1.1, 0.1, pos, quat, new THREE.MeshStandardMaterial( {color:'#808080'} ) );
                 
                 // roof
                 pos.set( 0, 3.1, 0 );
                 quat.set( 0, 0, -0.1, 1 );
-                createInvisibleCollisionBody( 5, 0.1, 5, pos, quat, new THREE.MeshPhongMaterial( {color:'#808080'} ) );
+                createInvisibleCollisionBody( 5, 0.1, 5, pos, quat, new THREE.MeshStandardMaterial( {color:'#808080'} ) );
                 
             
                 // wall near bed
                 pos.set( 1.90, 2, 0 );
                 quat.set( 0, 0, 0, 1 );
-                createInvisibleCollisionBody( 0.1, 5, 5, pos, quat, new THREE.MeshPhongMaterial( {color:'#808080'} ) );
+                createInvisibleCollisionBody( 0.1, 5, 5, pos, quat, new THREE.MeshStandardMaterial( {color:'#808080'} ) );
                 
                 // opposite wall
                 pos.set( -1.72, 2, 0 );
                 quat.set( 0, 0, 0, 1 );
-                createInvisibleCollisionBody( 0.1, 5, 5, pos, quat, new THREE.MeshPhongMaterial( {color:'#808080'} ) );
+                createInvisibleCollisionBody( 0.1, 5, 5, pos, quat, new THREE.MeshStandardMaterial( {color:'#808080'} ) );
                 
             
                 // wall with window
                 pos.set( -0.32, 2, -2.65 );
                 quat.set( 0, 0, 0, 1 );
-                createInvisibleCollisionBody( 1, 1.7, 0.01, pos, quat, new THREE.MeshPhongMaterial( {color:'#808080'} ) );
+                createInvisibleCollisionBody( 1, 1.7, 0.01, pos, quat, new THREE.MeshStandardMaterial( {color:'#808080'} ) );
                 
                 pos.set( -1.8, 2, -2.65 );
                 quat.set( 0, 0, 0, 1 );
-                scene.add(createInvisibleCollisionBody( 2, 5, 0.01, pos, quat, new THREE.MeshPhongMaterial( {color:'#000000'} ) ));
+                scene.add(createInvisibleCollisionBody( 2, 5, 0.01, pos, quat, new THREE.MeshStandardMaterial( {color:'#000000'} ) ));
                 
                 pos.set( 1.1, 2, -2.65 );
                 quat.set( 0, 0, 0, 1 );
-                scene.add(createInvisibleCollisionBody( 2, 5, 0.01, pos, quat, new THREE.MeshPhongMaterial( {color:'#000000'} ) ));
+                scene.add(createInvisibleCollisionBody( 2, 5, 0.01, pos, quat, new THREE.MeshStandardMaterial( {color:'#000000'} ) ));
                 
                 pos.set( 0, 0.6, -2.65 );
                 quat.set( 0, 0, 0, 1 );
-                scene.add(createInvisibleCollisionBody( 5, 1.2, 0.01, pos, quat, new THREE.MeshPhongMaterial( {color:'#000000'} ) ));
+                scene.add(createInvisibleCollisionBody( 5, 1.2, 0.01, pos, quat, new THREE.MeshStandardMaterial( {color:'#000000'} ) ));
                 
                 pos.set( 0, 5.6, -2.65 );
                 quat.set( 0, 0, 0, 1 );
-                scene.add(createInvisibleCollisionBody( 5, 5, 0.01, pos, quat, new THREE.MeshPhongMaterial( {color:'#000000'} ) ));
+                scene.add(createInvisibleCollisionBody( 5, 5, 0.01, pos, quat, new THREE.MeshStandardMaterial( {color:'#000000'} ) ));
                 
                 // opposite wall
                 pos.set( 0, 2, 1.82 );
                 quat.set( 0, 0, 0, 1 );
-                createInvisibleCollisionBody( 10, 10, 0.1, pos, quat, new THREE.MeshPhongMaterial( {color:'#808080'} ) );                
+                createInvisibleCollisionBody( 10, 10, 0.1, pos, quat, new THREE.MeshStandardMaterial( {color:'#808080'} ) );                
 
 
                 // chair by the wall
                 pos.set( -1.25, 0.42, -0.45 );
                 quat.set( 0, 0, 0, 1 );
-                createInvisibleCollisionBody( 0.42, 0.35, 0.42, pos, quat, new THREE.MeshPhongMaterial( {color:'#808080'} ) );                                 
+                createInvisibleCollisionBody( 0.42, 0.35, 0.42, pos, quat, new THREE.MeshStandardMaterial( {color:'#808080'} ) );                                 
 
                 // chair by the bed
                 pos.set( -0.09, 0.42, -1.99 );
                 quat.set( 0, 0.45, 0, 1 );
-                createInvisibleCollisionBody( 0.42, 0.35, 0.42, pos, quat, new THREE.MeshPhongMaterial( {color:'#808080'} ) );                                 
+                createInvisibleCollisionBody( 0.42, 0.35, 0.42, pos, quat, new THREE.MeshStandardMaterial( {color:'#808080'} ) );                                 
 
                  // table by the bed
                 pos.set( -0.93, 0.73, -1.87 );
                 quat.set( 0, -0.48, 0, 1 );
-                createInvisibleCollisionBody( 0.6, 0.3, 0.6, pos, quat, new THREE.MeshPhongMaterial( {color:'#808080'} ) );  
+                createInvisibleCollisionBody( 0.6, 0.3, 0.6, pos, quat, new THREE.MeshStandardMaterial( {color:'#808080'} ) );  
                 
                 // round table
                 pos.set( -1.0, 0.6, 1.0 );
                 quat.set( 0, 0.0, 0, 1 );
-                createInvisibleCollisionBody( 0.75, 0.1, 0.75, pos, quat, new THREE.MeshPhongMaterial( {color:'#808080'} ) );  
+                createInvisibleCollisionBody( 0.75, 0.1, 0.75, pos, quat, new THREE.MeshStandardMaterial( {color:'#808080'} ) );  
               
                 var gltfscene = gltf.scene;
                 var yey = [];
@@ -521,6 +561,9 @@ function loadRoomModel( model ) {
                         if ( object.isMesh) {
                             object.receiveShadow = true;
                             if(object.name=="mesh_15" || object.name=="mesh_14") object.castShadow = true;
+                            var material = new THREE.MeshStandardMaterial( { map:object.material.map } );                                
+                            object.material = material;
+                            object.material.flatShading=true;                            
                             yey.push(object);
                         }
                 } );
@@ -604,6 +647,7 @@ function animate() {
         // Get the time elapsed since the last frame
         var delta = clock.getDelta();
         // models are loaded and play is pressed
+        
         if(loading.style.display=="block") {
             var timediff=(new Date()-starttime)/1000;
             if(timediff>3){
@@ -616,7 +660,7 @@ function animate() {
             playbutton.style.display="inline-block";
             
         }
-        if(roomisloaded && rigidBodies.length>6 && play){
+        if(roomisloaded && rigidBodies.length>6 && play && !escispressed){
             timeleft=Math.round(gameovertime-(new Date()/1000));
             timeinfo.innerText=timeleft;
             if(timeleft==0) {gameOver(false); return;}
@@ -631,11 +675,16 @@ function animate() {
             for ( var i = 0; i < mousemixers.length; ++ i ) {
                     mousemixers[ i ].update( delta );
             }        
+            if(firsttime) {catpaw.click();firsttime=false;}            
         }
         setTimeout( function() {
             requestAnimationFrame( animate );
         }, 1000 / 30 );
-        renderer.render( scene, camera );
+                
+        if(params.glow) composer.render();
+        else if(params.toon) outlineeffect.render(scene,camera);
+        else renderer.render( scene, camera );
+        
 }
 
 //////////////////////////////
@@ -645,6 +694,16 @@ function animate() {
 /**
  * Initialize ThreeJS scene renderer
  */
+
+function stopTime(){
+    pausedstart = new Date();
+}
+function startTime(){
+    gameovertime+=(new Date()-pausedstart)/1000;
+}
+
+var composer;
+var bloomPass;
 function initRenderer() {
         var canvas = document.createElement( 'canvas' );
         var context = canvas.getContext( 'webgl2', { alpha: false } );
@@ -655,6 +714,17 @@ function initRenderer() {
         renderer.gammaFactor = 2.2;
         renderer.shadowMap.enabled = true;
         renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+        
+        var renderScene = new RenderPass( scene, camera );
+        bloomPass = new UnrealBloomPass( new THREE.Vector2( window.innerWidth, window.innerHeight ), 1.5, 0.4, 0.85 );    
+        bloomPass.threshold = params.bloomThreshold;
+        bloomPass.strength = params.bloomStrength;
+        bloomPass.radius = 0;
+        composer = new EffectComposer( renderer );
+        composer.addPass( renderScene );
+        composer.addPass( bloomPass );
+        outlineeffect = new OutlineEffect( renderer );
+
         //renderer.physicallyCorrectLights=true;
         container.appendChild( renderer.domElement );
 }
@@ -700,15 +770,149 @@ function initScene() {
        
         function updateCamera(){light.shadow.camera.updateProjectionMatrix();}
      
-        const gui = new GUI();
+        gui = new GUI();
         
-        const folder = gui.addFolder("light settings");
-        folder.add(params,'night').onChange(function(){hemiLight.visible = ! hemiLight.visible; light.visible = ! light.visible;dirLight.visible = ! dirLight.visible;});
-        folder.add(light, 'intensity', 0, 10, 0.01);                
-        folder.add(light.position, 'x', - 1.5, 1.7).onChange(updateCamera);
-        folder.add(light.position, 'y', 0.2, 2.8).onChange(updateCamera);
-        folder.add(light.position, 'z', - 2.5, 1.6).onChange(updateCamera);
+        var lightsettings = gui.addFolder("light settings");
+        lightsettings.add(params,'night').onChange(function(){hemiLight.visible = ! hemiLight.visible; light.visible = ! light.visible;dirLight.visible = ! dirLight.visible;});
+        lightsettings.add(light, 'intensity', 0, 10, 0.01);                
+        lightsettings.add(light.position, 'x', - 1.5, 1.7).onChange(updateCamera);
+        lightsettings.add(light.position, 'y', 0.2, 2.8).onChange(updateCamera);
+        lightsettings.add(light.position, 'z', - 2.5, 1.6).onChange(updateCamera);
         
+        var musicsettings = gui.addFolder("audio settings");
+        musicsettings.add(params,'music');
+        musicsettings.add(params,'sound');
+        
+        gui.add(params, 'shading', ['none', 'glow', 'toon', 'phong', 'depth', 'rainbow']).onChange(function(){
+            if(params.shading == 'none'){
+                renderer.toneMappingExposure = 1;                 
+                params.glow=false;
+                params.toon=false;
+                params.phong=false;
+                params.depth=false;
+                params.rainbow=false;
+            }
+            else if(params.shading == 'glow'){
+                renderer.toneMappingExposure = Math.pow( 0.6, 4.0 );
+                params.glow=true;
+                params.toon=false;
+                params.phong=false;
+                params.depth=false;
+                params.rainbow=false;
+            }
+            else if(params.shading == 'phong'){
+                renderer.toneMappingExposure = 1;                                 
+                params.glow=false;
+                params.toon=false;
+                params.phong=true;
+                params.depth=false;
+                params.rainbow=false;
+            }
+            else if(params.shading == 'toon'){
+                renderer.toneMappingExposure = 1;                                 
+                params.glow=false;
+                params.toon=true;
+                params.phong=false;
+                params.depth=false;
+                params.rainbow=false;
+            }       
+            else if(params.shading == 'depth'){
+                renderer.toneMappingExposure = 1;                                 
+                params.glow=false;
+                params.toon=false;
+                params.phong=false;
+                params.depth=true;
+                params.rainbow=false;
+            }       
+            else if(params.shading == 'rainbow'){
+                renderer.toneMappingExposure = 1;                                 
+                params.glow=false;
+                params.toon=false;
+                params.phong=false;
+                params.depth=false;
+                params.rainbow=true;
+            }       
+            
+            if(params.phong || params.depth || params.rainbow) {
+                roomscene.traverse( function ( object ) {
+                   if(object.isMesh) {
+                        //var material = new THREE.MeshToonMaterial( { map:object.material.map, gradientMap:gradientMaps.fiveTone } );
+                        var material;
+                        if(params.phong) material = new THREE.MeshPhongMaterial( {map:object.material.map} );
+                        else if(params.rainbow) material = new THREE.MeshNormalMaterial( {map:object.material.map} );
+                        else material = new THREE.MeshDepthMaterial( {map:object.material.map} );
+                        object.material = material;
+                        object.material.flatShading=true;
+                   }
+                });
+                paintings.traverse( function ( object ) {
+                   if(object.isMesh) {
+                        //var material = new THREE.MeshToonMaterial( { map:object.material.map, gradientMap:gradientMaps.fiveTone } );
+                        var material;
+                        if(params.phong) material = new THREE.MeshPhongMaterial( {map:object.material.map} );
+                        else if(params.rainbow) material = new THREE.MeshNormalMaterial( {map:object.material.map} );
+                        else material = new THREE.MeshDepthMaterial( {map:object.material.map} );
+                        object.material = material;
+                        object.material.flatShading=true;
+                   }
+                });                
+                rigidBodies.forEach( function ( somescene ) {
+                    if(somescene.name!="thecat"){                    
+                        somescene.traverse( function ( object ) {
+                            if(object.isMesh) {
+                                //var material = new THREE.MeshToonMaterial( { map:object.material.map, gradientMap:gradientMaps.fiveTone } );
+                                var material;
+                                if(params.phong) material = new THREE.MeshPhongMaterial( {map:object.material.map} );
+                                else if(params.rainbow) material = new THREE.MeshNormalMaterial( {map:object.material.map} );
+                                else material = new THREE.MeshDepthMaterial( {map:object.material.map} );
+                                object.material = material;
+                                object.material.flatShading=true;
+                           }
+                        });
+                    }
+                });
+            }
+           else{
+                roomscene.traverse( function ( object ) {
+                   if(object.isMesh) {
+                        var material = new THREE.MeshStandardMaterial( { map:object.material.map } );
+                        object.material = material;
+                        object.material.flatShading=true;
+                   }
+                });               
+                paintings.traverse( function ( object ) {
+                   if(object.isMesh) {
+                        var material = new THREE.MeshStandardMaterial( { map:object.material.map } );
+                        object.material = material;
+                        object.material.flatShading=true;
+                   }
+                });                  
+                rigidBodies.forEach( function ( somescene ) {
+                    if(somescene.name!="thecat"){                    
+                        somescene.traverse( function ( object ) {                    
+                            if(object.isMesh) {
+                                 var material = new THREE.MeshStandardMaterial( { map:object.material.map } );
+                                 object.material = material;
+                                 object.material.flatShading=true;
+                            }
+                        });
+                    }
+                });               
+           }
+        });
+        
+        gui.add( params, 'exposure', 0.1, 2 ).onChange( function ( value ) {
+                renderer.toneMappingExposure = Math.pow( value, 4.0 );
+        } );
+
+        gui.add( params, 'bloomThreshold', 0.0, 1.0 ).onChange( function ( value ) {
+                bloomPass.threshold = Number( value );
+        } );
+
+        gui.add( params, 'bloomStrength', 0.0, 3.0 ).onChange( function ( value ) {
+                bloomPass.strength = Number( value );
+        } );
+        gui.domElement.hidden=true;
         window.addEventListener( 'resize', onWindowResize, false );
         //window.addEventListener( 'click', onDocumentMouseClick, false );
 }
@@ -720,6 +924,8 @@ function onWindowResize() {
         camera.aspect = window.innerWidth / window.innerHeight;
         camera.updateProjectionMatrix();
         renderer.setSize( window.innerWidth, window.innerHeight );
+	composer.setSize( window.innerWidth, window.innerHeight );        
+	outlineeffect.setSize( window.innerWidth, window.innerHeight );        
         controls.handleResize();
 }
 
@@ -803,6 +1009,13 @@ function ThirdPersonControls ( object, domElement ) {
 	this.onKeyDown = function ( event ) {
                 
 		switch ( event.keyCode ) {
+                        case 27: /*esc*/ 
+                            escispressed=!escispressed;
+                            instructions.style.display='none';
+                            if(escispressed) {stopTime();gui.domElement.hidden= false;}
+                            else {startTime();gui.domElement.hidden=true;}
+                            break;
+                        
 			case 38: /*up*/
 			case 87: /*W*/ this.moveForward = true; break;
 
@@ -918,10 +1131,10 @@ function ThirdPersonControls ( object, domElement ) {
                                                     action.play();
                                                     vasefell=50;
                                                     vasemixer=mixer;
-                                                    breaksound.play();
+                                                    if(params.sound) breaksound.play();
                                                 }
                                                 else{
-                                                    hitsound.play();
+                                                    if(params.sound) hitsound.play();
                                                 }
                                             }
                                         }
@@ -930,23 +1143,22 @@ function ThirdPersonControls ( object, domElement ) {
                         
                         this.object.rotation.y = rotay;
 
-                        // UPDATE CAMERA
+                            // UPDATE CAMERA
                         var deltacamera = new THREE.Vector3(this.object.position.x+Math.sin(Math.PI*3/2-this.mouseX*0.004)*1.5, 
                                                             this.object.position.y+1+Math.sin(this.mouseY*0.002), 
                                                             this.object.position.z+Math.cos(Math.PI*3/2-this.mouseX*0.004)*1.5)
-                        
+
                         // avoid camera from going out of the room
 //                        deltacamera.x=Math.max(deltacamera.x,-1.0);
 //                        deltacamera.x=Math.min(deltacamera.x,1.0);
 //                        deltacamera.z=Math.max(deltacamera.z,-1.0);
 //                        deltacamera.z=Math.min(deltacamera.z,1.0);
-                        
+
                         camera.position.copy(deltacamera);
                         camera.lookAt(new THREE.Vector3(this.object.position.x,
                                                         this.object.position.y-this.mouseY*0.002,
                                                         this.object.position.z));
 
-                        
                         // UPDATE BIRD
                         function changeBirdsAnimation(number){
                             var mixer = new THREE.AnimationMixer( bird.scene );
