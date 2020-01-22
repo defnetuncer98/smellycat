@@ -35,10 +35,23 @@
                                 display:none;
                                 font-family: 'Letter Gothic';
                         }
-                        #playbutton {
-                                position: absolute;
+                        #catpaw {
                                 text-align:center;
-                                top: 70%;
+                                border: 1px solid #ffffff;
+                                font-size: 100%;
+                                color:white;
+                                z-index: 100;
+                                font-family: 'Letter Gothic';
+                                text-decoration:none;
+                        }  
+                        #catpaw:hover {
+                          background-color: #e7ff5a;
+                          color: white;
+                        }                           
+                        #playbutton {
+                                position:absolute;
+                                top:70%;
+                                text-align:center;
                                 border: 1px solid #ffffff;
                                 width: 240px;
                                 font-size: 400%;
@@ -69,22 +82,57 @@
                         }  
                         #breaksound {
                                 display:none;
-                        }                           
+                        }
+                        .inst {
+                            text-align:center;
+                            font-family: 'Letter Gothic';
+                            opacity:0.5;
+                            z-index: 100;
+                            color:white;
+                            font-size:100%;
+                            position:relative;
+                        }
                         
 		</style>
 	</head>
 	<body>
             <img id="loading" src="SmellyCatOpening.gif" style="display:block;"/>
             <img id="loading2" src="SmellyCat.gif" style="display:none;"/>
-            <div id="container"></div>
-            <div style="align-items:center;display:flex;justify-content: center;"><a href=# id="playbutton">p l a y</a></div>
+            <div id="container">
+            </div>
             <div style="position:absolute;top:10%;left:10%;">
                 <div><div class="guitext" id="scoretext">s c o r e :</div><div class="info" id="info"></div></div>
                 <div><div class="guitext" id="timetext">t i m e  l e f t :</div><div class="info" id="timeinfo"></div></div>                  
             </div>
+            
             <div class="info" id="painting" style="position:absolute;opacity:0.5;font-size:100%"></div>
             <audio id="hitsound" controls> <source src="node_modules/three/examples/sounds/zapsplat_impact_wood_post_drop_concrete_ground_003_14044.mp3"></audio>
             <audio id="breaksound" controls> <source src="node_modules/three/examples/sounds/impact_tile_debris_breaking.mp3"></audio>
+            
+            <div style="position:absolute;top:30%;  top: 50%; left: 50%; transform: translate(-50%, -50%);">
+                <div style="align-items:center;display:flex;justify-content: center;flex-direction:column;">
+                    <div id="instructions">
+                        <div class="inst">Try to drop as much stuff possible before time runs out!</div><br>
+                        <div class="inst">Use mouse to move the camera</div><br>
+                        <div class="inst">Move             W, A, S, D</div> <br>               
+                        <div class="inst">Settings         ESC</div>
+                        <div class="inst">Press to exit the instructions</div>
+                    </div>
+                </div>
+            </div>
+            <div style="align-items:center;display:flex;justify-content: center;">           
+                <a href=# id="playbutton">p l a y</a>                
+            </div> 
+            
+            <div style="position:absolute;right:5%;bottom:5%;">           
+                <a href=# id="catpaw"> HOW TO PLAY? </a>                
+            </div> 
+            
+<!--            <a href="#" id="catpaw" style="position:absolute; bottom:5%; right:5%; opacity:0.5"><img style="max-width:50%" src="icons8-cat-footprint-96.png"></a>
+    -->        
+     <!--       <div style="align-items:center;display:flex;justify-content: center;">
+                <a href=# id="playbutton">p l a y</a>
+            </div>   -->         
             <script type="module" src="smellycat.js"></script>
             <script src="node_modules/three/examples/js/libs/ammo.js"></script>
 	</body>
