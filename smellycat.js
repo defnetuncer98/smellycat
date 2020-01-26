@@ -6,6 +6,7 @@ import { EffectComposer } from './node_modules/three/examples/jsm/postprocessing
 import { RenderPass } from './node_modules/three/examples/jsm/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from './node_modules/three/examples/jsm/postprocessing/UnrealBloomPass.js';
 import { OutlineEffect } from './node_modules/three/examples/jsm/effects/OutlineEffect.js';
+import { Reflector } from './node_modules/three/examples/jsm/objects/Reflector.js';
 
 var play = false;
 var gameovertime;
@@ -30,10 +31,9 @@ function increaseScore(){
 }
 
 function gameOver(isWin){
-    playbutton.style.display="inline-block";
     play=false;
-    if(!isWin) playbutton.innerText = "y o u  l o s t ! r e p l a y";
-    else playbutton.innerText = "y o u  w i n ! r e p l a y";
+    if(!isWin) catpaw.innerText="Game Over. Press F5 to replay";
+    else catpaw.innerText="You win! Press F5 to replay";
 }
 
 function increaseTime(){
@@ -125,7 +125,8 @@ var bird;
 var flying=false;
 var flyingleft=true;
 var stilljumping=0;
-var didobjectfall = [false, false, false, false, false, false, false, false, false, false, false, false ]; // for now there are only two objects that can fall
+var didobjectfall = [false, false, false, false, false, false, false, false, false,
+    false, false, false, false, false, false, false, false, false, false, false, false, false, false  ]; // for now there are only two objects that can fall
 var vasefell=0;
 var vasemixer;
 var vase;
@@ -182,7 +183,7 @@ var MODELS = [
             name: "Palette", 
             path: "./node_modules/three/examples/models/palette.glb",
             position: { x: 0.7, y: 2.0, z: -1.5 }, // Where to put the unit in the scene
-            shape: {x: 0.2, y: 0.05, z: 0.2},
+            shape: {x: 0.2, y: 0.02, z: 0.2},
             rotation: {x:0, y:0, z:0},
             scale: 1,
         },    
@@ -190,8 +191,8 @@ var MODELS = [
         {
             name: "Brush", 
             path: "./node_modules/three/examples/models/brush.glb",
-            position: { x: 0.7, y: 2.0, z: -0.9 }, // Where to put the unit in the scene
-            shape: {x: 0.2, y: 0.005, z: 0.01},
+            position: { x: 0.7, y: 2.0, z: -0.8 }, // Where to put the unit in the scene
+            shape: {x: 0.1, y: 0.005, z: 0.005},
             rotation: {x: 0, y:0, z:0},
             scale: 0.1, 
         },        
@@ -347,6 +348,14 @@ var MODELS = [
             rotation: {x: 0, y:0.0, z:0},
             scale: 0.08, 
         },
+        {
+            name: "Ear", 
+            path: "./node_modules/three/examples/models/ear.glb",
+            position: { x:1.3, y:0.1, z: -2 }, // Where to put the unit in the scene
+            shape: {x: 0.02, y: 0.02, z: 0.04},
+            rotation: {x: -1.57, y:0.0, z:0},
+            scale: 0.003, 
+        },
 ];
 
 Ammo().then( function ( AmmoLib ) {
@@ -413,10 +422,10 @@ function createRigidBody( threeObject, physicsShape, mass, pos, quat ) {
                 else if(threeObject.name==="Shoes") didobjectfall[rigidBodies.length-1] = true;
                 else if(threeObject.name==="Table") didobjectfall[rigidBodies.length-1] = true;
                 else if(threeObject.name==="Roundtable") didobjectfall[rigidBodies.length-1] = true;
+                else if(threeObject.name==="Ear") didobjectfall[rigidBodies.length-1] = true;
         }
         else if(threeObject.name=="shelf"){
                 scene.add( threeObject );
-                console.log("yey");
                 shelves.push( threeObject );
         }
         // Disable deactivation
@@ -443,6 +452,31 @@ function loadModels() {
                 else if(i===1) loadBird(m);
                 else loadGLTFModel( m );
         }
+        
+        var geometry = new THREE.PlaneBufferGeometry( 0.6,2 );
+        var verticalMirror = new Reflector( geometry, {
+                clipBias: 0.003,
+                textureWidth: window.innerWidth * window.devicePixelRatio,
+                textureHeight: window.innerHeight * window.devicePixelRatio,
+                color: 0x889999,
+                recursion: 1
+        } );
+        verticalMirror.position.y = 1.5;
+        verticalMirror.position.x = 1.78;
+        verticalMirror.position.z = 1.2;
+        verticalMirror.rotation.y = -1.57;
+        scene.add( verticalMirror );  
+        
+        var loader = new THREE.TextureLoader();
+        var woodtex = loader.load('./node_modules/three/examples/pics/wood-bump.jpg');            
+        pos.set( 1.8, 1.5, 1.2 );
+        quat.set( 0, 0, 0, 1 );
+        createInvisibleCollisionBody( 0.01, 2.1, 0.7, pos, quat, new THREE.MeshStandardMaterial( {map: woodtex} ), true); 
+        
+        pos.set( 1.77, 1.5, 1.2 );        
+        createInvisibleCollisionBody( 0.01, 2.1, 0.7, pos, quat, new THREE.MeshStandardMaterial( {map: woodtex, opacity:0.1, transparent:true} ), true); 
+
+        
 }
 
 function loadBird( model ) {
@@ -480,9 +514,19 @@ function loadGLTFModel( model ) {
                                 object.castShadow = true;
                                 object.receiveShadow = true;
                                 //object.material.emissiveIntensity = 5;
-                                var material = new THREE.MeshStandardMaterial( { map:object.material.map } );                                
-                                object.material = material;
-                                object.material.flatShading=true;
+                                if(model.name=="Vase"){
+                                    var loader = new THREE.TextureLoader();
+                                    var woodtex = loader.load('./node_modules/three/examples/pics/wood-bump.jpg');                                    
+                                    var material = new THREE.MeshStandardMaterial( { map:woodtex} );
+                                    object.material = material;
+                                    object.material.flatShading=true;                                    
+                                }
+                                else {
+                                    var material = new THREE.MeshStandardMaterial( { map:object.material.map, color:object.material.color } );
+                                    object.material = material;
+                                    object.material.flatShading=true;
+                                }                                                                    
+
                         }
                 } );      
                 
@@ -571,7 +615,6 @@ function loadRoomModel( model ) {
                 
                 
                 var loader = new THREE.TextureLoader();
-                
                 var woodtex = loader.load('./node_modules/three/examples/pics/wood-bump.jpg');
                 
                 
@@ -689,7 +732,7 @@ function animate() {
         if(roomisloaded && rigidBodies.length>6 && play && !escispressed){
             timeleft=Math.round(gameovertime-(new Date()/1000));
             timeinfo.innerText=timeleft;
-            if(timeleft==0) {gameOver(false); return;}
+            if(timeleft<=0) {gameOver(false); return;}
             if(!idle) catmixer.update(delta);
             controls.update( delta );  
             if(flying)birdmixer.update(delta*0.1); // bird's animation needs to be slowed then when flying
@@ -950,17 +993,17 @@ function initScene() {
            }
         });
         
-        gui.add( params, 'exposure', 0.1, 2 ).onChange( function ( value ) {
-                renderer.toneMappingExposure = Math.pow( value, 4.0 );
-        } );
-
-        gui.add( params, 'bloomThreshold', 0.0, 1.0 ).onChange( function ( value ) {
-                bloomPass.threshold = Number( value );
-        } );
-
-        gui.add( params, 'bloomStrength', 0.0, 3.0 ).onChange( function ( value ) {
-                bloomPass.strength = Number( value );
-        } );
+//        gui.add( params, 'exposure', 0.1, 2 ).onChange( function ( value ) {
+//                renderer.toneMappingExposure = Math.pow( value, 4.0 );
+//        } );
+//
+//        gui.add( params, 'bloomThreshold', 0.0, 1.0 ).onChange( function ( value ) {
+//                bloomPass.threshold = Number( value );
+//        } );
+//
+//        gui.add( params, 'bloomStrength', 0.0, 3.0 ).onChange( function ( value ) {
+//                bloomPass.strength = Number( value );
+//        } );
         gui.domElement.hidden=true;
         window.addEventListener( 'resize', onWindowResize, false );
         //window.addEventListener( 'click', onDocumentMouseClick, false );
