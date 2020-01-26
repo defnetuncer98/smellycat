@@ -7,9 +7,6 @@ import { RenderPass } from './node_modules/three/examples/jsm/postprocessing/Ren
 import { UnrealBloomPass } from './node_modules/three/examples/jsm/postprocessing/UnrealBloomPass.js';
 import { OutlineEffect } from './node_modules/three/examples/jsm/effects/OutlineEffect.js';
 
-//////////////////////////////
-// Game controls effect = new OutlineEffect( renderer );
-//////////////////////////////
 var play = false;
 var gameovertime;
 function onPlayClick() {
@@ -160,7 +157,6 @@ var outlineeffect;
 var MODELS = [
         { 
             name: "SmellyCat", 
-            loader:"fbx",
             path: "./node_modules/three/examples/models/fbx/cat.fbx",
             position: { x: 0, y: 0, z: 0 }, 
             rotation: { x: 0, y: 0, z: 0},
@@ -169,7 +165,6 @@ var MODELS = [
         },    
         { 
             name: "Redcoat-Robin", 
-            loader:"gltf",
             path: "./node_modules/three/examples/models/gltf/redcoat-robin/scene.gltf",
             //position: { x: -1.1, y: 1, z: -0.5 }, //on the chair
             position: { x: 0.53, y: 1.36, z: -0.22 }, //on the bed
@@ -179,14 +174,12 @@ var MODELS = [
         },         
         {
             name: "BedroomInArles", 
-            loader: "gltf",
             path: "./node_modules/three/examples/models/bedroom.glb",
             position: { x: 0, y: 0, z: 0 }, // Where to put the unit in the scene
             scale: 20, 
         },        
         {
             name: "Palette", 
-            loader: "gltf",
             path: "./node_modules/three/examples/models/palette.glb",
             position: { x: 1.0, y: 2.0, z: -1.7 }, // Where to put the unit in the scene
             shape: {x: 0.2, y: 0.02, z: 0.1},
@@ -196,7 +189,6 @@ var MODELS = [
         
         {
             name: "Brush", 
-            loader: "gltf",
             path: "./node_modules/three/examples/models/brush.glb",
             position: { x: 1.0, y: 2.0, z: -1 }, // Where to put the unit in the scene
             shape: {x: 0.1, y: 0.2, z: 0.02},
@@ -205,7 +197,6 @@ var MODELS = [
         },        
         {
             name: "Shoes", 
-            loader: "gltf",
             path: "./node_modules/three/examples/models/shoes.glb",
             position: { x:1.0, y:0.03, z:-1.0 }, // Where to put the unit in the scene
             shape: {x: 0.1, y: 0.01, z: 0.1},
@@ -214,7 +205,6 @@ var MODELS = [
         },   
         {
             name: "Roundtable", 
-            loader: "gltf",
             path: "./node_modules/three/examples/models/roundtable.glb",
             position: { x:-1.0, y:0.5, z: 1.0 }, // Where to put the unit in the scene
             shape: {x: 0.02, y: 0.02, z: 0.02},
@@ -223,7 +213,6 @@ var MODELS = [
         },   
         {
             name: "Vase", 
-            loader: "gltf",
             path: "./node_modules/three/examples/models/gltf/vase/scene.gltf",
             position: { x:-0.8, y:0.72, z: 1.1 }, // Where to put the unit in the scene
             shape: {x: 0.15, y: 0.02, z: 0.15},
@@ -232,7 +221,6 @@ var MODELS = [
         },   
         {
             name: "Sunflower", 
-            loader: "gltf",
             path: "./node_modules/three/examples/models/zonnebloem.glb",
             position: { x:-0.75, y:0.8, z: 1.2 }, // Where to put the unit in the scene
             shape: {x: 0.06, y: 0.1, z: 0.06},
@@ -243,7 +231,6 @@ var MODELS = [
 
         {
             name: "Table", 
-            loader: "gltf",
             path: "./node_modules/three/examples/models/table.glb",
             position: { x:-0.95, y:0.3, z: -1.68 }, // Where to put the unit in the scene
             shape: {x: 0.0, y: 0.0, z: 0.0},
@@ -253,7 +240,6 @@ var MODELS = [
         
         {
             name: "Chair1", 
-            loader: "gltf",
             path: "./node_modules/three/examples/models/chair.glb",
             position: { x:-1.25, y:0.42, z: -0.45 }, // Where to put the unit in the scene
             shape: {x: 0.0, y: 0.0, z: 0.0},
@@ -262,7 +248,6 @@ var MODELS = [
         },  
         {
             name: "Chair2", 
-            loader: "gltf",
             path: "./node_modules/three/examples/models/chair.glb",
             position: { x:-0.1, y:0.42, z: -2.0 }, // Where to put the unit in the scene
             shape: {x: 0.0, y: 0.0, z: 0.0},
@@ -272,7 +257,6 @@ var MODELS = [
         
         {
             name: "Bed", 
-            loader: "gltf",
             path: "./node_modules/three/examples/models/bed.glb",
             position: { x:0, y:0.2, z: 0 }, // Where to put the unit in the scene
             shape: {x: 0.0, y: 0.0, z: 0.0},
@@ -281,7 +265,6 @@ var MODELS = [
         },  
         {
             name: "Tableobject1", 
-            loader: "gltf",
             path: "./node_modules/three/examples/models/tableitem1.glb",
             position: {  x:-1.12, y:1, z: -1.9  }, // Where to put the unit in the scene
             shape: {x: 0.01, y: 0.01, z: 0.01},
@@ -291,7 +274,6 @@ var MODELS = [
         
         {
             name: "Tableobject3", 
-            loader: "gltf",
             path: "./node_modules/three/examples/models/tableitem3.glb",
             position: {  x:-0.9, y:1, z: -1.9  }, // Where to put the unit in the scene
             shape: {x: 0.01, y: 0.01, z: 0.01},
@@ -302,7 +284,6 @@ var MODELS = [
         
         {
             name: "Tableobject4", 
-            loader: "gltf",
             path: "./node_modules/three/examples/models/tableitem4.glb",
             position: { x:-1.07, y:1.2, z: -1.68  }, // Where to put the unit in the scene
             shape: {x: 0.02, y: 0.02, z: 0.02},
@@ -312,7 +293,6 @@ var MODELS = [
         
         {
             name: "Tableobject5", 
-            loader: "gltf",
             path: "./node_modules/three/examples/models/tableitem4.glb",
             position: { x:-0.77, y:0.8, z: -1.72 }, // Where to put the unit in the scene
             shape: {x: 0.01, y: 0.01, z: 0.01},
@@ -369,9 +349,7 @@ function createRigidBody( threeObject, physicsShape, mass, pos, quat ) {
         physicsShape.calculateLocalInertia( mass, localInertia );
         var rbInfo = new Ammo.btRigidBodyConstructionInfo( mass, motionState, physicsShape, localInertia );
         var body = new Ammo.btRigidBody( rbInfo );
-        threeObject.userData.physicsBody = body;
-        //threeObject.castShadow = true;
-        //threeObject.receiveShadow = true;         
+        threeObject.userData.physicsBody = body;      
         if ( mass > 0 ) {
                 scene.add( threeObject );
                 rigidBodies.push( threeObject );
@@ -408,7 +386,6 @@ function loadModels() {
                 if(i===2) loadRoomModel(m);
                 else if(i===0) loadCat(m);
                 else if(i===1) loadBird(m);
-                else if(m.loader==="fbx") loadFBXModel( m );
                 else loadGLTFModel( m );
         }
 }
@@ -416,6 +393,11 @@ function loadModels() {
 function loadBird( model ) {
         var loader = new GLTFLoader(); 
         loader.load( model.path, function ( gltf ) {
+                gltf.scene.traverse( function ( object ) {
+                        if ( object.isMesh ) {
+                                object.castShadow = true;
+                                object.receiveShadow = true;
+                }});
                 if ( model.position ) {
                         gltf.scene.position.copy(  new THREE.Vector3( model.position.x, model.position.y, model.position.z ));
                 }
@@ -581,42 +563,13 @@ function loadRoomModel( model ) {
                 } );
 }
 
-/**
- * Load a 3D model from a FBX file. Use the FBXLoader.
- * @param model {object} Model config, one item from the MODELS array. It will be updated inside the function!
- */
-function loadFBXModel( model ) {
-        var loader = new FBXLoader();
-        loader.load( model.path, function ( gltf ) {
-                gltf.traverse( function ( object ) {
-                        if ( object.isMesh ) {
-                                object.castShadow = true;
-                        }
-                } );
-                if ( model.position ) {
-                        gltf.position.copy(  new THREE.Vector3( model.position.x, model.position.y, model.position.z ));
-                }
-                if ( model.scale ) {
-                        gltf.scale.copy(  new THREE.Vector3( model.scale, model.scale, model.scale ));
-                }
-                if ( model.rotation ) {
-                        gltf.rotation.copy( new THREE.Euler( model.rotation.x,model.rotation.y,model.rotation.z));
-                }
-                var ballMass = 10;
-                var ballShape = new Ammo.btBoxShape( new Ammo.btVector3( model.shape.x, model.shape.y, model.shape.z )  );
-                ballShape.setMargin( 0.0 );
-                var body = createRigidBody( gltf, ballShape, ballMass, gltf.position, gltf.quaternion );
-                body.setFriction( 0.5 );
-                scene.add(gltf);
-        } );
-}
-
 function loadCat( model ) {
         var loader = new FBXLoader();
         loader.load( model.path, function ( gltf ) {
                 gltf.traverse( function ( object ) {
                         if ( object.isMesh ) {
                                 object.castShadow = true;
+                                object.receiveShadow = true;
                         }
                 } );
                 if ( model.position ) {
