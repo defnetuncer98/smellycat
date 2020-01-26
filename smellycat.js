@@ -20,7 +20,7 @@ function onPlayClick() {
     timetext.style.display="block";
     info.innerText=0;
     playbutton.style.display="none";
-    gameovertime=Math.round(60+new Date()/1000);
+    gameovertime=Math.round(180+new Date()/1000);
     
 }
 
@@ -86,7 +86,7 @@ playbutton.addEventListener('click', onPlayClick);
 catpaw.addEventListener('click', displayinstructions);
 var hitsound = document.getElementById('hitsound');
 var breaksound = document.getElementById('breaksound');
-
+var shelves = [];
 var firsttime=true;
 var gui;
 var escispressed = false;
@@ -167,7 +167,7 @@ var MODELS = [
             name: "Redcoat-Robin", 
             path: "./node_modules/three/examples/models/gltf/redcoat-robin/scene.gltf",
             //position: { x: -1.1, y: 1, z: -0.5 }, //on the chair
-            position: { x: 0.53, y: 1.36, z: -0.22 }, //on the bed
+            position: { x: 0.53, y: 1.31, z: -0.22 }, //on the bed
             rotation: { x: 0, y: 0, z: 0},
             scale: 0.0002, 
             animationName: 3 // Name of animation to run            
@@ -181,8 +181,8 @@ var MODELS = [
         {
             name: "Palette", 
             path: "./node_modules/three/examples/models/palette.glb",
-            position: { x: 1.0, y: 2.0, z: -1.7 }, // Where to put the unit in the scene
-            shape: {x: 0.2, y: 0.02, z: 0.1},
+            position: { x: 0.7, y: 2.0, z: -1.5 }, // Where to put the unit in the scene
+            shape: {x: 0.2, y: 0.05, z: 0.2},
             rotation: {x:0, y:0, z:0},
             scale: 1,
         },    
@@ -190,19 +190,12 @@ var MODELS = [
         {
             name: "Brush", 
             path: "./node_modules/three/examples/models/brush.glb",
-            position: { x: 1.0, y: 2.0, z: -1 }, // Where to put the unit in the scene
-            shape: {x: 0.1, y: 0.2, z: 0.02},
-            rotation: {x: 0, y:0, z:1},
+            position: { x: 0.7, y: 2.0, z: -0.9 }, // Where to put the unit in the scene
+            shape: {x: 0.2, y: 0.005, z: 0.01},
+            rotation: {x: 0, y:0, z:0},
             scale: 0.1, 
         },        
-        {
-            name: "Shoes", 
-            path: "./node_modules/three/examples/models/shoes.glb",
-            position: { x:1.0, y:0.03, z:-1.0 }, // Where to put the unit in the scene
-            shape: {x: 0.1, y: 0.01, z: 0.1},
-            rotation: {x: 0, y:0, z:0},
-            scale: 0.25, 
-        },   
+ 
         {
             name: "Roundtable", 
             path: "./node_modules/three/examples/models/roundtable.glb",
@@ -215,17 +208,17 @@ var MODELS = [
             name: "Vase", 
             path: "./node_modules/three/examples/models/gltf/vase/scene.gltf",
             position: { x:-0.8, y:0.72, z: 1.1 }, // Where to put the unit in the scene
-            shape: {x: 0.15, y: 0.02, z: 0.15},
-            rotation: {x: 0, y:0, z:0},
+            shape: {x: 0.25, y: 0.035, z: 0.25},
+            rotation: {x: 0, y:4.5, z:0},
             scale: 0.02, 
         },   
         {
             name: "Sunflower", 
-            path: "./node_modules/three/examples/models/zonnebloem.glb",
-            position: { x:-0.75, y:0.8, z: 1.2 }, // Where to put the unit in the scene
+            path: "./node_modules/three/examples/models/sunflower.glb",
+            position: { x:-0.81, y:0.8, z: 1.14 }, // Where to put the unit in the scene
             shape: {x: 0.06, y: 0.1, z: 0.06},
-            rotation: {x: 0, y:3.14, z:0},
-            scale: 0.6, 
+            rotation: {x: 0, y:1, z:0},
+            scale: 0.0016, 
         },   
   
 
@@ -299,6 +292,61 @@ var MODELS = [
             rotation: {x: 0, y:0.0, z:0},
             scale: 1.0, 
         },
+        
+        {
+            name: "Book1", 
+            path: "./node_modules/three/examples/models/book.glb",
+            position: { x:0.6, y:2, z: 1.5 }, // Where to put the unit in the scene
+            shape: {x: 0.2, y: 0.03, z: 0.1},
+            rotation: {x: 0, y:0.0, z:1.62},
+            scale: 0.01, 
+        },
+        
+        {
+            name: "Book2", 
+            path: "./node_modules/three/examples/models/book.glb",
+            position: { x:0.5, y:2, z: 1.5 }, // Where to put the unit in the scene
+            shape: {x: 0.2, y: 0.03, z: 0.1},
+            rotation: {x: 0, y:0.0, z:1.62},
+            scale: 0.01, 
+        },
+        
+        {
+            name: "Book3", 
+            path: "./node_modules/three/examples/models/book.glb",
+            position: { x:0.4, y:2, z: 1.5 }, // Where to put the unit in the scene
+            shape: {x: 0.2, y: 0.03, z: 0.1},
+            rotation: {x: 0, y:0.0, z:1.62},
+            scale: 0.01, 
+        },
+        
+        {
+            name: "Book4", 
+            path: "./node_modules/three/examples/models/book.glb",
+            position: { x:-0.4, y:1.5, z: 1.5 }, // Where to put the unit in the scene
+            shape: {x: 0.2, y: 0.03, z: 0.1},
+            rotation: {x: 0, y:0.0, z:1.62},
+            scale: 0.01, 
+        },
+        
+        {
+            name: "Book5", 
+            path: "./node_modules/three/examples/models/book.glb",
+            position: { x:-0.3, y:1.5, z: 1.5 }, // Where to put the unit in the scene
+            shape: {x: 0.2, y: 0.03, z: 0.1},
+            rotation: {x: 0, y:0.0, z:1.62},
+            scale: 0.01, 
+        },
+        
+        
+        {
+            name: "Mug", 
+            path: "./node_modules/three/examples/models/mug.glb",
+            position: { x:0.8, y:2, z: 1.5 }, // Where to put the unit in the scene
+            shape: {x: 0.05, y: 0.01, z: 0.05},
+            rotation: {x: 0, y:0.0, z:0},
+            scale: 0.08, 
+        },
 ];
 
 Ammo().then( function ( AmmoLib ) {
@@ -326,13 +374,15 @@ function initPhysics() {
         transformAux1 = new Ammo.btTransform();
 }
 
-function createInvisibleCollisionBody( sx, sy, sz, pos, quat, material ) {
+function createInvisibleCollisionBody( sx, sy, sz, pos, quat, material, sceneadded=false) {
         var threeObject = new THREE.Mesh( new THREE.BoxBufferGeometry( sx, sy, sz, 1, 1, 1 ), material );
         threeObject.castShadow = true;
         threeObject.receiveShadow = true;                 
         var shape = new Ammo.btBoxShape( new Ammo.btVector3( sx * 0.5, sy * 0.5, sz * 0.5 ) );
         shape.setMargin( margin );
         threeObject.opacity = 1.0;
+        if (sceneadded){threeObject.name="shelf";}
+        //scene.add(threeObject);
         createRigidBody( threeObject, shape, 0, pos, quat ); // has zero mass
         return threeObject;
 }
@@ -364,6 +414,11 @@ function createRigidBody( threeObject, physicsShape, mass, pos, quat ) {
                 else if(threeObject.name==="Table") didobjectfall[rigidBodies.length-1] = true;
                 else if(threeObject.name==="Roundtable") didobjectfall[rigidBodies.length-1] = true;
         }
+        else if(threeObject.name=="shelf"){
+                scene.add( threeObject );
+                console.log("yey");
+                shelves.push( threeObject );
+        }
         // Disable deactivation
         body.setActivationState( 4 );
         physicsWorld.addRigidBody( body );
@@ -377,7 +432,7 @@ function createRigidBody( threeObject, physicsShape, mass, pos, quat ) {
  */
 function loadModels() {
         // create ground
-        pos.set( 0, -0.45, 0 );
+        pos.set( 0, -0.5, 0 );
         quat.set( 0, 0, 0, 1 );
         createInvisibleCollisionBody( 100, 1, 100, pos, quat, new THREE.MeshStandardMaterial( {color:'#808080'} ) );
         
@@ -457,81 +512,99 @@ function loadRoomModel( model ) {
         loader.load( model.path, function ( gltf ) {
                 
                 // bed
-                pos.set( 1.1, 0.6, -1.29 );
+                pos.set( 1.1, 0.55, -1.29 );
                 quat.set( 0, 0, 0, 1 );
-                createInvisibleCollisionBody( 1.25, 0.55, 2.0, pos, quat, new THREE.MeshStandardMaterial( {color:'#808080'} ) );
+                createInvisibleCollisionBody( 1.25, 0.5, 2.0, pos, quat, new THREE.MeshStandardMaterial( {color:'#808080'} ) );
                 
                 // bedend
-                pos.set( 1.12, 0.75, -0.24 );
+                pos.set( 1.12, 0.7, -0.24 );
                 quat.set( 0, 0, 0, 1 );
                 createInvisibleCollisionBody( 1.25, 1.1, 0.1, pos, quat, new THREE.MeshStandardMaterial( {color:'#808080'} ) );
                 
                 // bedhead
-                pos.set( 1.12, 0.75, -2.30 );
+                pos.set( 1.12, 0.7, -2.30 );
                 quat.set( 0, 0, 0, 1 );
                 createInvisibleCollisionBody( 1.25, 1.1, 0.1, pos, quat, new THREE.MeshStandardMaterial( {color:'#808080'} ) );
                 
                 // roof
-                pos.set( 0, 3.1, 0 );
+                pos.set( 0, 3.05, 0 );
                 quat.set( 0, 0, -0.1, 1 );
                 createInvisibleCollisionBody( 5, 0.1, 5, pos, quat, new THREE.MeshStandardMaterial( {color:'#808080'} ) );
                 
             
                 // wall near bed
-                pos.set( 1.90, 2, 0 );
+                pos.set( 1.90, 1.95, 0 );
                 quat.set( 0, 0, 0, 1 );
                 createInvisibleCollisionBody( 0.1, 5, 5, pos, quat, new THREE.MeshStandardMaterial( {color:'#808080'} ) );
                 
                 // opposite wall
-                pos.set( -1.72, 2, 0 );
+                pos.set( -1.72, 1.95, 0 );
                 quat.set( 0, 0, 0, 1 );
                 createInvisibleCollisionBody( 0.1, 5, 5, pos, quat, new THREE.MeshStandardMaterial( {color:'#808080'} ) );
                 
             
                 // wall with window
-                pos.set( -0.32, 2, -2.65 );
+                pos.set( -0.32, 1.95, -2.65 );
                 quat.set( 0, 0, 0, 1 );
                 createInvisibleCollisionBody( 1, 1.7, 0.01, pos, quat, new THREE.MeshStandardMaterial( {color:'#808080'} ) );
                 
-                pos.set( -1.8, 2, -2.65 );
+                pos.set( -1.8, 1.95, -2.65 );
                 quat.set( 0, 0, 0, 1 );
                 scene.add(createInvisibleCollisionBody( 2, 5, 0.01, pos, quat, new THREE.MeshStandardMaterial( {color:'#000000'} ) ));
                 
-                pos.set( 1.1, 2, -2.65 );
+                pos.set( 1.1, 1.95, -2.65 );
                 quat.set( 0, 0, 0, 1 );
                 scene.add(createInvisibleCollisionBody( 2, 5, 0.01, pos, quat, new THREE.MeshStandardMaterial( {color:'#000000'} ) ));
                 
-                pos.set( 0, 0.6, -2.65 );
+                pos.set( 0, 0.55, -2.65 );
                 quat.set( 0, 0, 0, 1 );
                 scene.add(createInvisibleCollisionBody( 5, 1.2, 0.01, pos, quat, new THREE.MeshStandardMaterial( {color:'#000000'} ) ));
                 
-                pos.set( 0, 5.6, -2.65 );
+                pos.set( 0, 5.55, -2.65 );
                 quat.set( 0, 0, 0, 1 );
                 scene.add(createInvisibleCollisionBody( 5, 5, 0.01, pos, quat, new THREE.MeshStandardMaterial( {color:'#000000'} ) ));
                 
                 // opposite wall
-                pos.set( 0, 2, 1.82 );
+                pos.set( 0, 1.95, 1.82 );
                 quat.set( 0, 0, 0, 1 );
-                createInvisibleCollisionBody( 10, 10, 0.1, pos, quat, new THREE.MeshStandardMaterial( {color:'#808080'} ) );                
+                createInvisibleCollisionBody( 10, 10, 0.1, pos, quat, new THREE.MeshStandardMaterial( {color:'#808080'} ) );      
+                
+                
+                var loader = new THREE.TextureLoader();
+                
+                var woodtex = loader.load('./node_modules/three/examples/pics/wood-bump.jpg');
+                
+                
+                // shelves          
+                pos.set( 0.65, 1.8, 1.55 );
+                quat.set( 0, 0, 0, 1 );
+                createInvisibleCollisionBody( 1.2, 0.05, 0.4, pos, quat, new THREE.MeshStandardMaterial( {map: woodtex} ), true); 
+             
+                pos.set( -0.75, 1.25, 1.55 );
+                quat.set( 0, 0, 0, 1 );
+                createInvisibleCollisionBody( 1.2, 0.05, 0.4, pos, quat, new THREE.MeshStandardMaterial( {map: woodtex} ), true);   
+                
+                
+                
 
 
                 // chair by the wall
-                pos.set( -1.25, 0.42, -0.45 );
+                pos.set( -1.25, 0.37, -0.45 );
                 quat.set( 0, 0, 0, 1 );
                 createInvisibleCollisionBody( 0.42, 0.35, 0.42, pos, quat, new THREE.MeshStandardMaterial( {color:'#808080'} ) );                                 
 
                 // chair by the bed
-                pos.set( -0.09, 0.42, -1.99 );
+                pos.set( -0.09, 0.37, -1.99 );
                 quat.set( 0, 0.45, 0, 1 );
                 createInvisibleCollisionBody( 0.42, 0.35, 0.42, pos, quat, new THREE.MeshStandardMaterial( {color:'#808080'} ) );                                 
 
                  // table by the bed
-                pos.set( -0.93, 0.73, -1.87 );
+                pos.set( -0.93, 0.68, -1.87 );
                 quat.set( 0, -0.48, 0, 1 );
                 createInvisibleCollisionBody( 0.6, 0.3, 0.6, pos, quat, new THREE.MeshStandardMaterial( {color:'#808080'} ) );  
                 
                 // round table
-                pos.set( -1.0, 0.6, 1.0 );
+                pos.set( -1.0, 0.55, 1.0 );
                 quat.set( 0, 0.0, 0, 1 );
                 createInvisibleCollisionBody( 0.75, 0.1, 0.75, pos, quat, new THREE.MeshStandardMaterial( {color:'#808080'} ) );  
               
@@ -609,7 +682,7 @@ function animate() {
                 
             }
         }
-        if(rigidBodies.length>6 && !play) {
+        if(roomisloaded && rigidBodies.length>6 && !play) {
             playbutton.style.display="inline-block";
             
         }
@@ -824,6 +897,20 @@ function initScene() {
                         });
                     }
                 });
+                shelves.forEach( function ( somescene ) {
+                        somescene.traverse( function ( object ) {
+                            if(object.isMesh) {
+                                //var material = new THREE.MeshToonMaterial( { map:object.material.map, gradientMap:gradientMaps.fiveTone } );
+                                var material;
+                                if(params.phong) material = new THREE.MeshPhongMaterial( {map:object.material.map} );
+                                else if(params.rainbow) material = new THREE.MeshNormalMaterial( {map:object.material.map} );
+                                else material = new THREE.MeshDepthMaterial( {map:object.material.map} );
+                                object.material = material;
+                                object.material.flatShading=true;
+                           }
+                        });
+                    
+                });                
             }
            else{
                 roomscene.traverse( function ( object ) {
@@ -850,7 +937,16 @@ function initScene() {
                             }
                         });
                     }
-                });               
+                });     
+                shelves.forEach( function ( somescene ) {
+                        somescene.traverse( function ( object ) {                    
+                            if(object.isMesh) {
+                                 var material = new THREE.MeshStandardMaterial( { map:object.material.map } );
+                                 object.material = material;
+                                 object.material.flatShading=true;
+                            }
+                        });
+                });                     
            }
         });
         
@@ -1048,7 +1144,7 @@ function ThirdPersonControls ( object, domElement ) {
                         if(space) {
                             if(stilljumping==0) {
                                 stilljumping=21; // to prevent multiple jumps count down from 50
-                                this.object.userData.physicsBody.setLinearVelocity(new Ammo.btVector3( 0, 3+actualMoveSpeed*6, 0));
+                                this.object.userData.physicsBody.setLinearVelocity(new Ammo.btVector3( 0, 10, 0));
                             }
                             space=false;
                         }
@@ -1086,7 +1182,7 @@ function ThirdPersonControls ( object, domElement ) {
                                                     vasemixer=mixer;
                                                     if(params.sound) breaksound.play();
                                                 }
-                                                else{
+                                                else if(objThree.name!='Sunflower'){
                                                     if(params.sound) hitsound.play();
                                                 }
                                             }
@@ -1120,7 +1216,7 @@ function ThirdPersonControls ( object, domElement ) {
                             birdmixer=mixer;                            
                         }
                         // Fly bird if cat got too close
-                        if(!flying && Math.abs(this.object.position.x-bird.scene.position.x)<0.3 && Math.abs(this.object.position.z-bird.scene.position.z)<0.3 && Math.abs(this.object.position.y-bird.scene.position.y)<0.3){
+                        if(!flying && Math.abs(this.object.position.x-bird.scene.position.x)<0.5 && Math.abs(this.object.position.z-bird.scene.position.z)<0.3 && Math.abs(this.object.position.y-bird.scene.position.y)<0.5){
                             changeBirdsAnimation(4); // fly
                             flying=true;
                         }
