@@ -11,6 +11,7 @@ import { Reflector } from './node_modules/three/examples/jsm/objects/Reflector.j
 var play = false;
 var gameovertime;
 function onPlayClick() {
+    document.getElementById('container').style.cursor = 'none';
     loading2.style.display = "none";
     container.style.display = "block";
     play=true;
@@ -681,11 +682,24 @@ function loadRoomModel( model ) {
 
 function loadCat( model ) {
         var loader = new FBXLoader();
+        var textureloader = new THREE.TextureLoader();        
         loader.load( model.path, function ( gltf ) {
                 gltf.traverse( function ( object ) {
                         if ( object.isMesh ) {
+                                console.log(object.material);
                                 object.castShadow = true;
                                 object.receiveShadow = true;
+                                if(Array.isArray(object.material)){
+                                    if(object.material[0].name=="skin"){
+                                        var cattex = textureloader.load('./node_modules/three/examples/pics/orange.png');                                             
+                                        object.material[0].map = cattex;
+                                        object.material[0].shininess = 0;
+                                        object.material[0].reflectivity = 0;
+                                    }
+                                }
+                                else{
+                                        object.material.color=new THREE.Color( 0.3,0.8,0.0 );                                    
+                                }
                         }
                 } );
                 if ( model.position ) {
@@ -776,6 +790,7 @@ var bloomPass;
 function initRenderer() {
         var canvas = document.createElement( 'canvas' );
         var context = canvas.getContext( 'webgl2', { alpha: false } );
+        
         renderer = new THREE.WebGLRenderer( { canvas: canvas, context: context } );
         renderer.setPixelRatio( window.devicePixelRatio );
         renderer.setSize( window.innerWidth, window.innerHeight );
