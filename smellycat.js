@@ -11,7 +11,7 @@ import { Reflector } from './node_modules/three/examples/jsm/objects/Reflector.j
 var play = false;
 var gameovertime;
 function onPlayClick() {
-    document.getElementById('container').style.cursor = 'none';
+    //document.getElementById('container').style.cursor = 'none';
     loading2.style.display = "none";
     container.style.display = "block";
     play=true;
@@ -49,6 +49,7 @@ function increaseTime(){
 //        var intersects = raycaster.intersectObjects( roomscene.children );
 //        if ( intersects.length > 0 ) {
 //                var object = intersects[ 0 ].object;
+//                console.log(object.name);
 //                scene.remove(scene.getObjectByName("roomscene"));//delete room from the scene
 //                roomscene.remove(object);//delete the object from the room
 //                scene.add(roomscene);//add the room to the scene again     
@@ -517,8 +518,8 @@ function loadGLTFModel( model ) {
                                 //object.material.emissiveIntensity = 5;
                                 if(model.name=="Vase"){
                                     var loader = new THREE.TextureLoader();
-                                    var woodtex = loader.load('./node_modules/three/examples/pics/wood-bump.jpg');                                    
-                                    var material = new THREE.MeshStandardMaterial( { map:woodtex} );
+                                    var bump = loader.load('./node_modules/three/examples/pics/bump-map.jpg');                                    
+                                    var material = new THREE.MeshStandardMaterial( { bumpMap:bump, metalness:0.9, color:new THREE.Color( 1.0,1.0,1.0), roughness:0.1} );
                                     object.material = material;
                                     object.material.flatShading=true;                                    
                                 }
@@ -669,7 +670,7 @@ function loadRoomModel( model ) {
                 
                 yey.forEach( function (object) {
                     roomscene.add(object);
-                    if(object.name=="mesh_2" || object.name=="mesh_3" || object.name=="mesh_5" || object.name=="mesh_6" || object.name=="mesh_7" || object.name=="mesh_8") paintings.add(object);
+                    if(object.name=="mesh_0" || object.name=="mesh_1" || object.name=="mesh_4" || object.name=="mesh_7" || object.name=="mesh_8" || object.name=="mesh_5") paintings.add(object);
                 });
             
                 roomscene.name = "roomscene";
@@ -946,9 +947,9 @@ function initScene() {
                             if(object.isMesh) {
                                 //var material = new THREE.MeshToonMaterial( { map:object.material.map, gradientMap:gradientMaps.fiveTone } );
                                 var material;
-                                if(params.phong) material = new THREE.MeshPhongMaterial( {map:object.material.map} );
-                                else if(params.rainbow) material = new THREE.MeshNormalMaterial( {map:object.material.map} );
-                                else material = new THREE.MeshDepthMaterial( {map:object.material.map} );
+                                if(params.phong) material = new THREE.MeshPhongMaterial( {map:object.material.map, bumpMap:object.material.bumpMap} );
+                                else if(params.rainbow) material = new THREE.MeshNormalMaterial( {map:object.material.map, bumpMap:object.material.bumpMap} );
+                                else material = new THREE.MeshDepthMaterial( {map:object.material.map, bumpMap:object.material.bumpMap} );
                                 object.material = material;
                                 object.material.flatShading=true;
                            }
@@ -989,7 +990,7 @@ function initScene() {
                     if(somescene.name!="thecat"){                    
                         somescene.traverse( function ( object ) {                    
                             if(object.isMesh) {
-                                 var material = new THREE.MeshStandardMaterial( { map:object.material.map } );
+                                 var material = new THREE.MeshStandardMaterial( { map:object.material.map, bumpMap:object.material.bumpMap } );
                                  object.material = material;
                                  object.material.flatShading=true;
                             }
@@ -1091,22 +1092,22 @@ function ThirdPersonControls ( object, domElement ) {
                         painting.style.left=event.pageX +10+'px';
                         painting.style.display="block";
 
-                        if(object.name=="mesh_2") {
+                        if(object.name=="mesh_4") {
                             painting.innerText="The Starry Night - 1889";
                         }
-                        else if(object.name=="mesh_5") {
+                        else if(object.name=="mesh_7") {
                             painting.innerText="Self-portrait - 1889";
                         }
-                        else if(object.name=="mesh_3") {
+                        else if(object.name=="mesh_5") {
                             painting.innerText="Cafe Terrace at Night - 1888";
                         }
-                        else if(object.name=="mesh_6") {
+                        else if(object.name=="mesh_8") {
                             painting.innerText="Portrait of Eugene Boch- 1888";
                         }
-                        else if(object.name=="mesh_7") {
+                        else if(object.name=="mesh_0") {
                             painting.innerText="Avenue of Poplars - 1884";
                         }
-                        else if(object.name=="mesh_8") {
+                        else if(object.name=="mesh_1") {
                             painting.innerText="Starry Night Over the Rhone - 1888";
                         }
                 }
