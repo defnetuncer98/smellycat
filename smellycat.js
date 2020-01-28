@@ -691,7 +691,6 @@ function loadCat( model ) {
         loader.load( model.path, function ( gltf ) {
                 gltf.traverse( function ( object ) {
                         if ( object.isMesh ) {
-                                console.log(object.material);
                                 object.castShadow = true;
                                 object.receiveShadow = true;
                                 if(Array.isArray(object.material)){
