@@ -11,6 +11,8 @@ import { Reflector } from './node_modules/three/examples/jsm/objects/Reflector.j
 var play = false;
 var gameovertime;
 function onPlayClick() {
+    music.play();
+    music.loop=true;
     //document.getElementById('container').style.cursor = 'none';
     loading2.style.display = "none";
     container.style.display = "block";
@@ -73,6 +75,7 @@ function displayinstructions(){
 //////////////////////////////
 // Global objects   
 //////////////////////////////
+var playappearedonce = false;
 var info = document.getElementById('info');
 var instructions = document.getElementById('instructions');
 var catpaw = document.getElementById('catpaw');
@@ -87,6 +90,7 @@ var loading2 = document.getElementById('loading2');
 playbutton.addEventListener('click', onPlayClick);
 catpaw.addEventListener('click', displayinstructions);
 var hitsound = document.getElementById('hitsound');
+var music = document.getElementById('music');
 var breaksound = document.getElementById('breaksound');
 var shelves = [];
 var firsttime=true;
@@ -740,8 +744,9 @@ function animate() {
                 
             }
         }
-        if(roomisloaded && rigidBodies.length>6 && !play) {
+        if(roomisloaded && rigidBodies.length>6 && !play && !playappearedonce) {
             playbutton.style.display="inline-block";
+            playappearedonce=true;
             
         }
         if(roomisloaded && rigidBodies.length>6 && play && !escispressed){
@@ -764,7 +769,6 @@ function animate() {
         setTimeout( function() {
             requestAnimationFrame( animate );
         }, 1000 / 30 );
-                
         if(params.glow) composer.render();
         else if(params.toon) outlineeffect.render(scene,camera);
         else renderer.render( scene, camera );
@@ -791,6 +795,7 @@ var bloomPass;
 function initRenderer() {
         var canvas = document.createElement( 'canvas' );
         var context = canvas.getContext( 'webgl2', { alpha: false } );
+        
         
         renderer = new THREE.WebGLRenderer( { canvas: canvas, context: context } );
         renderer.setPixelRatio( window.devicePixelRatio );
@@ -865,7 +870,10 @@ function initScene() {
         lightsettings.add(light.position, 'z', - 2.5, 1.6).onChange(updateCamera);
         
         var musicsettings = gui.addFolder("audio settings");
-        musicsettings.add(params,'music');
+        musicsettings.add(params,'music').onChange(function(){
+            if(params.music) music.play();
+            else music.pause();
+        });
         musicsettings.add(params,'sound');
         
         gui.add(params, 'shading', ['none', 'glow', 'toon', 'phong', 'depth', 'rainbow']).onChange(function(){
@@ -1232,7 +1240,7 @@ function ThirdPersonControls ( object, domElement ) {
                                             if(objThree.position.y<0.2 && !didobjectfall[i]) {
                                                 didobjectfall[i]=true;
                                                 increaseScore();
-                                                if(score===10) gameOver(true);                                                
+                                                if(score===10) {gameOver(true); return;}
                                                 if(objThree.name=="Vase"){
                                                     var mixer = new THREE.AnimationMixer( vase.scene );
                                                     var action = mixer.clipAction(vase.animations[0]);
@@ -1255,12 +1263,6 @@ function ThirdPersonControls ( object, domElement ) {
                         var deltacamera = new THREE.Vector3(this.object.position.x+Math.sin(Math.PI*3/2-this.mouseX*0.004)*1.5, 
                                                             this.object.position.y+1+Math.sin(this.mouseY*0.002), 
                                                             this.object.position.z+Math.cos(Math.PI*3/2-this.mouseX*0.004)*1.5)
-
-                        // avoid camera from going out of the room
-//                        deltacamera.x=Math.max(deltacamera.x,-1.0);
-//                        deltacamera.x=Math.min(deltacamera.x,1.0);
-//                        deltacamera.z=Math.max(deltacamera.z,-1.0);
-//                        deltacamera.z=Math.min(deltacamera.z,1.0);
 
                         camera.position.copy(deltacamera);
                         camera.lookAt(new THREE.Vector3(this.object.position.x,
