@@ -43,20 +43,20 @@ function increaseTime(){
     gameovertime+=10;
 }
 
-//function onDocumentMouseClick( event ) {
-//        event.preventDefault();
-//        mouse.x = ( event.clientX / window.innerWidth ) * 2 - 1;
-//        mouse.y = - ( event.clientY / window.innerHeight ) * 2 + 1;
-//        raycaster.setFromCamera( mouse, camera );
-//        var intersects = raycaster.intersectObjects( roomscene.children );
-//        if ( intersects.length > 0 ) {
-//                var object = intersects[ 0 ].object;
-//                console.log(object.name);
-//                scene.remove(scene.getObjectByName("roomscene"));//delete room from the scene
-//                roomscene.remove(object);//delete the object from the room
-//                scene.add(roomscene);//add the room to the scene again     
-//        }
-//}
+function onDocumentMouseClick( event ) {
+        event.preventDefault();
+        mouse.x = ( event.clientX / window.innerWidth ) * 2 - 1;
+        mouse.y = - ( event.clientY / window.innerHeight ) * 2 + 1;
+        raycaster.setFromCamera( mouse, camera );
+        var intersects = raycaster.intersectObjects( roomscene.children );
+        if ( intersects.length > 0 ) {
+                var object = intersects[ 0 ].object;
+                console.log(object.name);
+                scene.remove(scene.getObjectByName("roomscene"));//delete room from the scene
+                roomscene.remove(object);//delete the object from the room
+                scene.add(roomscene);//add the room to the scene again     
+        }
+}
 
 
 function displayinstructions(){
@@ -389,14 +389,14 @@ function initPhysics() {
         transformAux1 = new Ammo.btTransform();
 }
 
-function createInvisibleCollisionBody( sx, sy, sz, pos, quat, material, sceneadded=false) {
+function createInvisibleCollisionBody( sx, sy, sz, pos, quat, material, sceneadded=false, name=" ") {
         var threeObject = new THREE.Mesh( new THREE.BoxBufferGeometry( sx, sy, sz, 1, 1, 1 ), material );
         threeObject.castShadow = true;
         threeObject.receiveShadow = true;                 
         var shape = new Ammo.btBoxShape( new Ammo.btVector3( sx * 0.5, sy * 0.5, sz * 0.5 ) );
         shape.setMargin( margin );
         threeObject.opacity = 1.0;
-        if (sceneadded){threeObject.name="shelf";}
+        if (sceneadded){threeObject.name=name;}
         //scene.add(threeObject);
         createRigidBody( threeObject, shape, 0, pos, quat ); // has zero mass
         return threeObject;
@@ -430,7 +430,7 @@ function createRigidBody( threeObject, physicsShape, mass, pos, quat ) {
                 else if(threeObject.name==="Roundtable") didobjectfall[rigidBodies.length-1] = true;
                 else if(threeObject.name==="Ear") didobjectfall[rigidBodies.length-1] = true;
         }
-        else if(threeObject.name=="shelf"){
+        else if(threeObject.name=="shelf" || threeObject.name=="dust"){
                 scene.add( threeObject );
                 shelves.push( threeObject );
         }
@@ -477,10 +477,12 @@ function loadModels() {
         var woodtex = loader.load('./node_modules/three/examples/pics/wood-bump.jpg');            
         pos.set( 1.8, 1.5, 1.2 );
         quat.set( 0, 0, 0, 1 );
+        //frame
         createInvisibleCollisionBody( 0.01, 2.1, 0.7, pos, quat, new THREE.MeshStandardMaterial( {map: woodtex} ), true); 
         
+        // dust
         pos.set( 1.77, 1.5, 1.2 );        
-        createInvisibleCollisionBody( 0.01, 2.1, 0.7, pos, quat, new THREE.MeshStandardMaterial( {map: woodtex, opacity:0.1, transparent:true} ), true); 
+        createInvisibleCollisionBody( 0.01, 2.1, 0.7, pos, quat, new THREE.MeshStandardMaterial( {map: woodtex, opacity:0.1, transparent:true} ), true, "dust"); 
 
         
 }
@@ -617,8 +619,8 @@ function loadRoomModel( model ) {
                 // opposite wall
                 pos.set( 0, 1.95, 1.82 );
                 quat.set( 0, 0, 0, 1 );
-                createInvisibleCollisionBody( 10, 10, 0.1, pos, quat, new THREE.MeshStandardMaterial( {color:'#808080'} ) );      
-                
+                createInvisibleCollisionBody( 10, 10, 0.1, pos, quat, new THREE.MeshStandardMaterial( {color:'#808080'} ) );
+
                 
                 var loader = new THREE.TextureLoader();
                 var woodtex = loader.load('./node_modules/three/examples/pics/wood-bump.jpg');
@@ -627,11 +629,11 @@ function loadRoomModel( model ) {
                 // shelves          
                 pos.set( 0.65, 1.8, 1.55 );
                 quat.set( 0, 0, 0, 1 );
-                createInvisibleCollisionBody( 1.2, 0.05, 0.4, pos, quat, new THREE.MeshStandardMaterial( {map: woodtex} ), true); 
+                createInvisibleCollisionBody( 1.2, 0.05, 0.4, pos, quat, new THREE.MeshStandardMaterial( {map: woodtex} ), true, "shelf"); 
              
                 pos.set( -0.75, 1.25, 1.55 );
                 quat.set( 0, 0, 0, 1 );
-                createInvisibleCollisionBody( 1.2, 0.05, 0.4, pos, quat, new THREE.MeshStandardMaterial( {map: woodtex} ), true);   
+                createInvisibleCollisionBody( 1.2, 0.05, 0.4, pos, quat, new THREE.MeshStandardMaterial( {map: woodtex} ), true, "shelf");   
                 
                 
                 
@@ -664,7 +666,7 @@ function loadRoomModel( model ) {
                 gltfscene.traverse( function ( object ) {
                         if ( object.isMesh) {
                             object.receiveShadow = true;
-                            if(object.name=="mesh_15" || object.name=="mesh_14") object.castShadow = true;
+                            if(object.name=="mesh_15" || object.name=="mesh_14" || object.name=="mesh_21" || object.name==="mesh_23") object.castShadow = true;
                             var material = new THREE.MeshStandardMaterial( { map:object.material.map } );                                
                             object.material = material;
                             object.material.flatShading=true;                            
@@ -691,6 +693,7 @@ function loadCat( model ) {
         loader.load( model.path, function ( gltf ) {
                 gltf.traverse( function ( object ) {
                         if ( object.isMesh ) {
+                                console.log(object.material);
                                 object.castShadow = true;
                                 object.receiveShadow = true;
                                 if(Array.isArray(object.material)){
@@ -967,12 +970,22 @@ function initScene() {
                         somescene.traverse( function ( object ) {
                             if(object.isMesh) {
                                 //var material = new THREE.MeshToonMaterial( { map:object.material.map, gradientMap:gradientMaps.fiveTone } );
-                                var material;
-                                if(params.phong) material = new THREE.MeshPhongMaterial( {map:object.material.map} );
-                                else if(params.rainbow) material = new THREE.MeshNormalMaterial( {map:object.material.map} );
-                                else material = new THREE.MeshDepthMaterial( {map:object.material.map} );
-                                object.material = material;
-                                object.material.flatShading=true;
+                                if(somescene.name=="dust"){
+                                    var material;
+                                    if(params.phong) material = new THREE.MeshPhongMaterial( {map:object.material.map, opacity:0.1, transparent:true} );
+                                    else if(params.rainbow) material = new THREE.MeshNormalMaterial( {map:object.material.map, opacity:0.1, transparent:true} );
+                                    else material = new THREE.MeshDepthMaterial( {map:object.material.map, opacity:0.1, transparent:true} );
+                                    object.material = material;
+                                    object.material.flatShading=true;
+                                }
+                                else{
+                                    var material;
+                                    if(params.phong) material = new THREE.MeshPhongMaterial( {map:object.material.map} );
+                                    else if(params.rainbow) material = new THREE.MeshNormalMaterial( {map:object.material.map} );
+                                    else material = new THREE.MeshDepthMaterial( {map:object.material.map} );
+                                    object.material = material;
+                                    object.material.flatShading=true;
+                                }
                            }
                         });
                     
@@ -1007,9 +1020,16 @@ function initScene() {
                 shelves.forEach( function ( somescene ) {
                         somescene.traverse( function ( object ) {                    
                             if(object.isMesh) {
-                                 var material = new THREE.MeshStandardMaterial( { map:object.material.map } );
-                                 object.material = material;
-                                 object.material.flatShading=true;
+                                if(somescene.name=="dust"){
+                                    var material = new THREE.MeshStandardMaterial( { map:object.material.map, opacity:0.1, transparent:true } );
+                                    object.material = material;
+                                    object.material.flatShading=true;
+                                }
+                                else{
+                                    var material = new THREE.MeshStandardMaterial( { map:object.material.map } );
+                                    object.material = material;
+                                    object.material.flatShading=true;
+                                }
                             }
                         });
                 });                     
