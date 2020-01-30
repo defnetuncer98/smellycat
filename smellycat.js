@@ -43,20 +43,39 @@ function increaseTime(){
     gameovertime+=10;
 }
 
+var objectispicked = false;
+var pickedobject;
+
 function onDocumentMouseClick( event ) {
         event.preventDefault();
         mouse.x = ( event.clientX / window.innerWidth ) * 2 - 1;
         mouse.y = - ( event.clientY / window.innerHeight ) * 2 + 1;
         raycaster.setFromCamera( mouse, camera );
-        var intersects = raycaster.intersectObjects( roomscene.children );
+        var intersects = raycaster.intersectObjects( paintings.children );
         if ( intersects.length > 0 ) {
                 var object = intersects[ 0 ].object;
-                console.log(object.name);
-                scene.remove(scene.getObjectByName("roomscene"));//delete room from the scene
-                roomscene.remove(object);//delete the object from the room
-                scene.add(roomscene);//add the room to the scene again     
+                if(objectispicked) objectispicked=false;
+                else{
+                    objectispicked=true;
+                    pickedobject=object;
+                }
+                
         }
 }
+//function onDocumentMouseClick( event ) {
+//        event.preventDefault();
+//        mouse.x = ( event.clientX / window.innerWidth ) * 2 - 1;
+//        mouse.y = - ( event.clientY / window.innerHeight ) * 2 + 1;
+//        raycaster.setFromCamera( mouse, camera );
+//        var intersects = raycaster.intersectObjects( roomscene.children );
+//        if ( intersects.length > 0 ) {
+//                var object = intersects[ 0 ].object;
+//                console.log(object.name);
+//                scene.remove(scene.getObjectByName("roomscene"));//delete room from the scene
+//                roomscene.remove(object);//delete the object from the room
+//                scene.add(roomscene);//add the room to the scene again     
+//        }
+//}
 
 
 function displayinstructions(){
@@ -137,7 +156,6 @@ var vasefell=0;
 var vasemixer;
 var vase;
 var mousemixers = [];
-var mice = new THREE.Group();
 var starttime;
 var timeleft;
 var pausedstart;
@@ -1049,7 +1067,7 @@ function initScene() {
 //        } );
         gui.domElement.hidden=true;
         window.addEventListener( 'resize', onWindowResize, false );
-        //window.addEventListener( 'click', onDocumentMouseClick, false );
+        window.addEventListener( 'click', onDocumentMouseClick, false );
 }
 
 /**
@@ -1140,10 +1158,111 @@ function ThirdPersonControls ( object, domElement ) {
                 }
                 else painting.style.display="none";
 	};
+        function rotateAboutPoint(obj, point, axis, theta, pointIsWorld){
+            pointIsWorld = (pointIsWorld === undefined)? false : pointIsWorld;
+
+            if(pointIsWorld){
+                obj.parent.localToWorld(obj.position); // compensate for world coordinate
+            }
+
+            obj.position.sub(point); // remove the offset
+            obj.position.applyAxisAngle(axis, theta); // rotate the POSITION
+            obj.position.add(point); // re-add the offset
+
+            if(pointIsWorld){
+                obj.parent.worldToLocal(obj.position); // undo world coordinates compensation
+            }
+
+            obj.rotateOnAxis(axis, theta); // rotate the OBJECT
+        }
 
 	this.onKeyDown = function ( event ) {
                 
 		switch ( event.keyCode ) {
+                        
+                        case 36: //7
+                            if(objectispicked){
+                                //rotateAboutPoint(pickedobject, pickedobject.position, new THREE.Vector3( 1.0,0.0,0.0 ), 0.1, false);
+                                pickedobject.rotateOnAxis(new THREE.Vector3( 1.0,0.0,0.0 ) , 0.1);
+                            }
+                            
+                        break;
+                        case 37: //4
+                            if(objectispicked){
+                                pickedobject.rotateOnAxis(new THREE.Vector3( 1.0,0.0,0.0 ) , -0.1);
+                          
+                            }                            
+                        break;      
+                        case 38: //8
+                            if(objectispicked){
+                                pickedobject.rotateOnAxis(new THREE.Vector3( 0.0,1.0,0.0 ) , 0.1);
+                       }
+                            
+                        break;
+                        case 12: //5
+                            if(objectispicked){
+                                pickedobject.rotateOnAxis(new THREE.Vector3( 0.0,1,0.0 ) , -0.1);
+                              
+                            }                            
+                        break;      
+                        case 33: //9
+                            if(objectispicked){
+                                pickedobject.rotateOnAxis(new THREE.Vector3( 0.0,0.0,1.0 ) , 0.1);
+                   }
+                            
+                        break;
+                        case 39: //6
+                            if(objectispicked){
+                                pickedobject.rotateOnAxis(new THREE.Vector3( 0.0,0.0,1.0 ) , -0.1);
+                          
+                            }                            
+                        break;      
+
+
+
+////////////////////////////////////////////////////////////
+                       case 49: //1
+                            if(objectispicked){
+                                pickedobject.position.x+=0.1;
+                            }
+                            
+                        break;
+                        case 50: //2
+                            if(objectispicked){
+                                pickedobject.position.x-=0.1;
+                                
+                            }                            
+                        break;    
+                    
+                       case 51: //3
+                            if(objectispicked){
+                                pickedobject.position.y+=0.1;
+                            }
+                            
+                        break;
+                        case 52: //4
+                            if(objectispicked){
+                                pickedobject.position.y-=0.1;
+                                
+                            }                            
+                        break;      
+                    
+                       case 53: //5
+                            if(objectispicked){
+                                pickedobject.position.z+=0.1;
+                            }
+                            
+                        break;
+                        case 54: //6
+                            if(objectispicked){
+                                pickedobject.position.z-=0.1;
+                                
+                            }                            
+                        break;      
+                 
+                    
+                    
+                    //////////////////////////
                         case 27: /*esc*/ 
                             escispressed=!escispressed;
                             instructions.style.display='none';
