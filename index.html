@@ -7,13 +7,13 @@
 		<style>
                         @font-face {
                             font-family: 'Gillattoz';
-                            src: URL('node_modules/three/examples/fonts/Gillattoz.ttf') format('truetype'),
-                            URL('node_modules/three/examples/fonts/Gillattoz.woff') format('woff'),
-                            URL('node_modules/three/examples/fonts/Gillattoz.woff2') format('woff2');
+                            src: URL('src/three/examples/fonts/Gillattoz.ttf') format('truetype'),
+                            URL('src/three/examples/fonts/Gillattoz.woff') format('woff'),
+                            URL('src/three/examples/fonts/Gillattoz.woff2') format('woff2');
                           }                    
                         @font-face {
                             font-family: 'Letter Gothic';
-                            src: URL('node_modules/three/examples/fonts/lettergothic.otf') format('truetype');
+                            src: URL('src/three/examples/fonts/lettergothic.otf') format('truetype');
                           }                               
 
 			body { margin: 0; overflow:hidden; height:100%;}
@@ -106,9 +106,9 @@
             </div>
             
             <div class="info" id="painting" style="position:absolute;opacity:0.5;font-size:100%"></div>
-            <audio id="hitsound" controls> <source src="node_modules/three/examples/sounds/zapsplat_impact_wood_post_drop_concrete_ground_003_14044.mp3"></audio>
-            <audio id="breaksound" controls> <source src="node_modules/three/examples/sounds/impact_tile_debris_breaking.mp3"></audio>
-            <audio id="music" controls> <source src="node_modules/three/examples/sounds/sneaky.mp3"></audio>
+            <audio id="hitsound" controls> <source src="src/three/examples/sounds/zapsplat_impact_wood_post_drop_concrete_ground_003_14044.mp3"></audio>
+            <audio id="breaksound" controls> <source src="src/three/examples/sounds/impact_tile_debris_breaking.mp3"></audio>
+            <audio id="music" controls> <source src="src/three/examples/sounds/sneaky.mp3"></audio>
             
             <div style="position:absolute;top:30%;  top: 80%; left: 50%; transform: translate(-50%, -50%);">
                 <div style="align-items:center;display:flex;justify-content: center;flex-direction:column;">
@@ -131,6 +131,6 @@
             </div> 
 
             <script type="module" src="smellycat.js"></script>
-            <script src="node_modules/three/examples/js/libs/ammo.js"></script>
+            <script src="src/three/examples/js/libs/ammo.js"></script>
 	</body>
 </html>
