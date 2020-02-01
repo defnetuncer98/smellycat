@@ -1,3 +1,12 @@
+import * as THREE from './src/three/build/three.module.js';
+import { GLTFLoader } from './src/three/examples/jsm/loaders/GLTFLoader.js';
+import { FBXLoader } from './src/three/examples/jsm/loaders/FBXLoader.js';
+import { GUI } from './src/three/examples/jsm/libs/dat.gui.module.js';
+import { EffectComposer } from './src/three/examples/jsm/postprocessing/EffectComposer.js';
+import { RenderPass } from './src/three/examples/jsm/postprocessing/RenderPass.js';
+import { UnrealBloomPass } from './src/three/examples/jsm/postprocessing/UnrealBloomPass.js';
+import { OutlineEffect } from './src/three/examples/jsm/effects/OutlineEffect.js';
+import { Reflector } from './src/three/examples/jsm/objects/Reflector.js';
 
 var play = false;
 var gameovertime;
@@ -34,25 +43,6 @@ function increaseTime(){
     gameovertime+=10;
 }
 
-var objectispicked = false;
-var pickedobject;
-
-function onDocumentMouseClick( event ) {
-        event.preventDefault();
-        mouse.x = ( event.clientX / window.innerWidth ) * 2 - 1;
-        mouse.y = - ( event.clientY / window.innerHeight ) * 2 + 1;
-        raycaster.setFromCamera( mouse, camera );
-        var intersects = raycaster.intersectObjects( paintings.children );
-        if ( intersects.length > 0 ) {
-                var object = intersects[ 0 ].object;
-                if(objectispicked) objectispicked=false;
-                else{
-                    objectispicked=true;
-                    pickedobject=object;
-                }
-                
-        }
-}
 //function onDocumentMouseClick( event ) {
 //        event.preventDefault();
 //        mouse.x = ( event.clientX / window.innerWidth ) * 2 - 1;
@@ -702,7 +692,6 @@ function loadCat( model ) {
         loader.load( model.path, function ( gltf ) {
                 gltf.traverse( function ( object ) {
                         if ( object.isMesh ) {
-                                console.log(object.material);
                                 object.castShadow = true;
                                 object.receiveShadow = true;
                                 if(Array.isArray(object.material)){
@@ -1044,21 +1033,10 @@ function initScene() {
                 });                     
            }
         });
-        
-//        gui.add( params, 'exposure', 0.1, 2 ).onChange( function ( value ) {
-//                renderer.toneMappingExposure = Math.pow( value, 4.0 );
-//        } );
-//
-//        gui.add( params, 'bloomThreshold', 0.0, 1.0 ).onChange( function ( value ) {
-//                bloomPass.threshold = Number( value );
-//        } );
-//
-//        gui.add( params, 'bloomStrength', 0.0, 3.0 ).onChange( function ( value ) {
-//                bloomPass.strength = Number( value );
-//        } );
+
         gui.domElement.hidden=true;
         window.addEventListener( 'resize', onWindowResize, false );
-        window.addEventListener( 'click', onDocumentMouseClick, false );
+        //window.addEventListener( 'click', onDocumentMouseClick, false );
 }
 
 /**
@@ -1171,89 +1149,7 @@ function ThirdPersonControls ( object, domElement ) {
                 
 		switch ( event.keyCode ) {
                         
-                        case 36: //7
-                            if(objectispicked){
-                                pickedobject.rotateOnAxis(new THREE.Vector3( 1.0,0.0,0.0 ) , 0.1);
-                            }
-                            
-                        break;
-                        case 37: //4
-                            if(objectispicked){
-                                pickedobject.rotateOnAxis(new THREE.Vector3( 1.0,0.0,0.0 ) , -0.1);
-                          
-                            }                            
-                        break;      
-                        case 38: //8
-                            if(objectispicked){
-                                pickedobject.rotateOnAxis(new THREE.Vector3( 0.0,1.0,0.0 ) , 0.1);
-                       }
-                            
-                        break;
-                        case 12: //5
-                            if(objectispicked){
-                                pickedobject.rotateOnAxis(new THREE.Vector3( 0.0,1,0.0 ) , -0.1);
-                              
-                            }                            
-                        break;      
-                        case 33: //9
-                            if(objectispicked){
-                                pickedobject.rotateOnAxis(new THREE.Vector3( 0.0,0.0,1.0 ) , 0.1);
-                   }
-                            
-                        break;
-                        case 39: //6
-                            if(objectispicked){
-                                pickedobject.rotateOnAxis(new THREE.Vector3( 0.0,0.0,1.0 ) , -0.1);
-                          
-                            }                            
-                        break;      
-
-
-
-////////////////////////////////////////////////////////////
-                       case 49: //1
-                            if(objectispicked){
-                                pickedobject.position.x+=0.1;
-                            }
-                            
-                        break;
-                        case 50: //2
-                            if(objectispicked){
-                                pickedobject.position.x-=0.1;
-                                
-                            }                            
-                        break;    
-                    
-                       case 51: //3
-                            if(objectispicked){
-                                pickedobject.position.y+=0.1;
-                            }
-                            
-                        break;
-                        case 52: //4
-                            if(objectispicked){
-                                pickedobject.position.y-=0.1;
-                                
-                            }                            
-                        break;      
-                    
-                       case 53: //5
-                            if(objectispicked){
-                                pickedobject.position.z+=0.1;
-                            }
-                            
-                        break;
-                        case 54: //6
-                            if(objectispicked){
-                                pickedobject.position.z-=0.1;
-                                
-                            }                            
-                        break;      
-                 
-                    
-                    
-                    //////////////////////////
-                        case 27: /*esc*/ 
+                         case 27: /*esc*/ 
                             escispressed=!escispressed;
                             instructions.style.display='none';
                             if(escispressed) {stopTime();gui.domElement.hidden= false;}
