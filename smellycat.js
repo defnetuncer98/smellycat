@@ -1,12 +1,3 @@
-import * as THREE from './node_modules/three/build/three.module.js';
-import { GLTFLoader } from './node_modules/three/examples/jsm/loaders/GLTFLoader.js';
-import { FBXLoader } from './node_modules/three/examples/jsm/loaders/FBXLoader.js';
-import { GUI } from './node_modules/three/examples/jsm/libs/dat.gui.module.js';
-import { EffectComposer } from './node_modules/three/examples/jsm/postprocessing/EffectComposer.js';
-import { RenderPass } from './node_modules/three/examples/jsm/postprocessing/RenderPass.js';
-import { UnrealBloomPass } from './node_modules/three/examples/jsm/postprocessing/UnrealBloomPass.js';
-import { OutlineEffect } from './node_modules/three/examples/jsm/effects/OutlineEffect.js';
-import { Reflector } from './node_modules/three/examples/jsm/objects/Reflector.js';
 
 var play = false;
 var gameovertime;
@@ -182,7 +173,7 @@ var outlineeffect;
 var MODELS = [
         { 
             name: "SmellyCat", 
-            path: "./node_modules/three/examples/models/fbx/cat.fbx",
+            path: "./src/three/examples/models/fbx/cat.fbx",
             position: { x: 0, y: 0, z: 0 }, 
             rotation: { x: 0, y: 0, z: 0},
             scale: 0.0003, 
@@ -190,7 +181,7 @@ var MODELS = [
         },    
         { 
             name: "Redcoat-Robin", 
-            path: "./node_modules/three/examples/models/gltf/redcoat-robin/scene.gltf",
+            path: "./src/three/examples/models/gltf/redcoat-robin/scene.gltf",
             //position: { x: -1.1, y: 1, z: -0.5 }, //on the chair
             position: { x: 0.53, y: 1.31, z: -0.22 }, //on the bed
             rotation: { x: 0, y: 0, z: 0},
@@ -199,13 +190,13 @@ var MODELS = [
         },         
         {
             name: "BedroomInArles", 
-            path: "./node_modules/three/examples/models/bedroom.glb",
+            path: "./src/three/examples/models/bedroom.glb",
             position: { x: 0, y: 0, z: 0 }, // Where to put the unit in the scene
             scale: 20, 
         },        
         {
             name: "Palette", 
-            path: "./node_modules/three/examples/models/palette.glb",
+            path: "./src/three/examples/models/palette.glb",
             position: { x: 0.7, y: 2.0, z: -1.5 }, // Where to put the unit in the scene
             shape: {x: 0.2, y: 0.02, z: 0.2},
             rotation: {x:0, y:0, z:0},
@@ -214,7 +205,7 @@ var MODELS = [
         
         {
             name: "Brush", 
-            path: "./node_modules/three/examples/models/brush.glb",
+            path: "./src/three/examples/models/brush.glb",
             position: { x: 0.7, y: 2.0, z: -0.8 }, // Where to put the unit in the scene
             shape: {x: 0.1, y: 0.005, z: 0.005},
             rotation: {x: 0, y:0, z:0},
@@ -223,7 +214,7 @@ var MODELS = [
  
         {
             name: "Roundtable", 
-            path: "./node_modules/three/examples/models/roundtable.glb",
+            path: "./src/three/examples/models/roundtable.glb",
             position: { x:-1.0, y:0.5, z: 1.0 }, // Where to put the unit in the scene
             shape: {x: 0.02, y: 0.02, z: 0.02},
             rotation: {x: 0, y:0, z:0},
@@ -231,7 +222,7 @@ var MODELS = [
         },   
         {
             name: "Vase", 
-            path: "./node_modules/three/examples/models/gltf/vase/scene.gltf",
+            path: "./src/three/examples/models/gltf/vase/scene.gltf",
             position: { x:-0.8, y:0.72, z: 1.1 }, // Where to put the unit in the scene
             shape: {x: 0.25, y: 0.035, z: 0.25},
             rotation: {x: 0, y:4.5, z:0},
@@ -239,7 +230,7 @@ var MODELS = [
         },   
         {
             name: "Sunflower", 
-            path: "./node_modules/three/examples/models/sunflower.glb",
+            path: "./src/three/examples/models/sunflower.glb",
             position: { x:-0.81, y:0.8, z: 1.14 }, // Where to put the unit in the scene
             shape: {x: 0.06, y: 0.1, z: 0.06},
             rotation: {x: 0, y:1, z:0},
@@ -249,7 +240,7 @@ var MODELS = [
 
         {
             name: "Table", 
-            path: "./node_modules/three/examples/models/table.glb",
+            path: "./src/three/examples/models/table.glb",
             position: { x:-0.95, y:0.3, z: -1.68 }, // Where to put the unit in the scene
             shape: {x: 0.0, y: 0.0, z: 0.0},
             rotation: {x: 0, y:0.0, z:0},
@@ -258,7 +249,7 @@ var MODELS = [
         
         {
             name: "Chair1", 
-            path: "./node_modules/three/examples/models/chair.glb",
+            path: "./src/three/examples/models/chair.glb",
             position: { x:-1.25, y:0.42, z: -0.45 }, // Where to put the unit in the scene
             shape: {x: 0.0, y: 0.0, z: 0.0},
             rotation: {x: 0, y:1.57, z:0},
@@ -266,7 +257,7 @@ var MODELS = [
         },  
         {
             name: "Chair2", 
-            path: "./node_modules/three/examples/models/chair.glb",
+            path: "./src/three/examples/models/chair.glb",
             position: { x:-0.1, y:0.42, z: -2.0 }, // Where to put the unit in the scene
             shape: {x: 0.0, y: 0.0, z: 0.0},
             rotation: {x: 0, y:1, z:0},
@@ -275,7 +266,7 @@ var MODELS = [
         
         {
             name: "Bed", 
-            path: "./node_modules/three/examples/models/bed.glb",
+            path: "./src/three/examples/models/bed.glb",
             position: { x:0, y:0.2, z: 0 }, // Where to put the unit in the scene
             shape: {x: 0.0, y: 0.0, z: 0.0},
             rotation: {x: 0, y:0, z:0},
@@ -283,7 +274,7 @@ var MODELS = [
         },  
         {
             name: "Tableobject1", 
-            path: "./node_modules/three/examples/models/tableitem1.glb",
+            path: "./src/three/examples/models/tableitem1.glb",
             position: {  x:-1.12, y:1, z: -1.9  }, // Where to put the unit in the scene
             shape: {x: 0.01, y: 0.01, z: 0.01},
             rotation: {x: 0, y:0.0, z:0},
@@ -292,7 +283,7 @@ var MODELS = [
         
         {
             name: "Tableobject3", 
-            path: "./node_modules/three/examples/models/tableitem3.glb",
+            path: "./src/three/examples/models/tableitem3.glb",
             position: {  x:-0.9, y:1, z: -1.9  }, // Where to put the unit in the scene
             shape: {x: 0.01, y: 0.01, z: 0.01},
             rotation: {x: 0, y:0.0, z:0},
@@ -302,7 +293,7 @@ var MODELS = [
         
         {
             name: "Tableobject4", 
-            path: "./node_modules/three/examples/models/tableitem4.glb",
+            path: "./src/three/examples/models/tableitem4.glb",
             position: { x:-1.07, y:1.2, z: -1.68  }, // Where to put the unit in the scene
             shape: {x: 0.02, y: 0.02, z: 0.02},
             rotation: {x: 0, y:0.0, z:0},
@@ -311,7 +302,7 @@ var MODELS = [
         
         {
             name: "Tableobject5", 
-            path: "./node_modules/three/examples/models/tableitem4.glb",
+            path: "./src/three/examples/models/tableitem4.glb",
             position: { x:-0.77, y:0.8, z: -1.72 }, // Where to put the unit in the scene
             shape: {x: 0.01, y: 0.01, z: 0.01},
             rotation: {x: 0, y:0.0, z:0},
@@ -320,7 +311,7 @@ var MODELS = [
         
         {
             name: "Book1", 
-            path: "./node_modules/three/examples/models/book.glb",
+            path: "./src/three/examples/models/book.glb",
             position: { x:0.6, y:2, z: 1.5 }, // Where to put the unit in the scene
             shape: {x: 0.2, y: 0.03, z: 0.1},
             rotation: {x: 0, y:0.0, z:1.62},
@@ -329,7 +320,7 @@ var MODELS = [
         
         {
             name: "Book2", 
-            path: "./node_modules/three/examples/models/book.glb",
+            path: "./src/three/examples/models/book.glb",
             position: { x:0.5, y:2, z: 1.5 }, // Where to put the unit in the scene
             shape: {x: 0.2, y: 0.03, z: 0.1},
             rotation: {x: 0, y:0.0, z:1.62},
@@ -338,7 +329,7 @@ var MODELS = [
         
         {
             name: "Book3", 
-            path: "./node_modules/three/examples/models/book.glb",
+            path: "./src/three/examples/models/book.glb",
             position: { x:0.4, y:2, z: 1.5 }, // Where to put the unit in the scene
             shape: {x: 0.2, y: 0.03, z: 0.1},
             rotation: {x: 0, y:0.0, z:1.62},
@@ -347,7 +338,7 @@ var MODELS = [
         
         {
             name: "Book4", 
-            path: "./node_modules/three/examples/models/book.glb",
+            path: "./src/three/examples/models/book.glb",
             position: { x:-0.4, y:1.5, z: 1.5 }, // Where to put the unit in the scene
             shape: {x: 0.2, y: 0.03, z: 0.1},
             rotation: {x: 0, y:0.0, z:1.62},
@@ -356,7 +347,7 @@ var MODELS = [
         
         {
             name: "Book5", 
-            path: "./node_modules/three/examples/models/book.glb",
+            path: "./src/three/examples/models/book.glb",
             position: { x:-0.3, y:1.5, z: 1.5 }, // Where to put the unit in the scene
             shape: {x: 0.2, y: 0.03, z: 0.1},
             rotation: {x: 0, y:0.0, z:1.62},
@@ -366,7 +357,7 @@ var MODELS = [
         
         {
             name: "Mug", 
-            path: "./node_modules/three/examples/models/mug.glb",
+            path: "./src/three/examples/models/mug.glb",
             position: { x:0.8, y:2, z: 1.5 }, // Where to put the unit in the scene
             shape: {x: 0.05, y: 0.01, z: 0.05},
             rotation: {x: 0, y:0.0, z:0},
@@ -374,7 +365,7 @@ var MODELS = [
         },
         {
             name: "Ear", 
-            path: "./node_modules/three/examples/models/ear.glb",
+            path: "./src/three/examples/models/ear.glb",
             position: { x:1.3, y:0.1, z: -2 }, // Where to put the unit in the scene
             shape: {x: 0.02, y: 0.02, z: 0.04},
             rotation: {x: -1.57, y:0.0, z:0},
@@ -492,7 +483,7 @@ function loadModels() {
         scene.add( verticalMirror );  
         
         var loader = new THREE.TextureLoader();
-        var woodtex = loader.load('./node_modules/three/examples/pics/wood-bump.jpg');            
+        var woodtex = loader.load('./src/three/examples/pics/wood-bump.jpg');            
         pos.set( 1.8, 1.5, 1.2 );
         quat.set( 0, 0, 0, 1 );
         //frame
@@ -542,7 +533,7 @@ function loadGLTFModel( model ) {
                                 //object.material.emissiveIntensity = 5;
                                 if(model.name=="Vase"){
                                     var loader = new THREE.TextureLoader();
-                                    var bump = loader.load('./node_modules/three/examples/pics/bump-map.jpg');                                    
+                                    var bump = loader.load('./src/three/examples/pics/bump-map.jpg');                                    
                                     var material = new THREE.MeshStandardMaterial( { bumpMap:bump, metalness:0.9, color:new THREE.Color( 1.0,1.0,1.0), roughness:0.1} );
                                     object.material = material;
                                     object.material.flatShading=true;                                    
@@ -641,7 +632,7 @@ function loadRoomModel( model ) {
 
                 
                 var loader = new THREE.TextureLoader();
-                var woodtex = loader.load('./node_modules/three/examples/pics/wood-bump.jpg');
+                var woodtex = loader.load('./src/three/examples/pics/wood-bump.jpg');
                 
                 
                 // shelves          
@@ -716,7 +707,7 @@ function loadCat( model ) {
                                 object.receiveShadow = true;
                                 if(Array.isArray(object.material)){
                                     if(object.material[0].name=="skin"){
-                                        var cattex = textureloader.load('./node_modules/three/examples/pics/orange.png');                                             
+                                        var cattex = textureloader.load('./src/three/examples/pics/orange.png');                                             
                                         object.material[0].map = cattex;
                                         object.material[0].shininess = 0;
                                         object.material[0].reflectivity = 0;
@@ -1182,7 +1173,6 @@ function ThirdPersonControls ( object, domElement ) {
                         
                         case 36: //7
                             if(objectispicked){
-                                //rotateAboutPoint(pickedobject, pickedobject.position, new THREE.Vector3( 1.0,0.0,0.0 ), 0.1, false);
                                 pickedobject.rotateOnAxis(new THREE.Vector3( 1.0,0.0,0.0 ) , 0.1);
                             }
                             
