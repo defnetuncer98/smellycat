@@ -744,7 +744,7 @@ function animate() {
                 
             }
         }
-        if(roomisloaded && rigidBodies.length>6 && !play && !playappearedonce) {
+        if(roomisloaded && rigidBodies.length==21 && !play && !playappearedonce) {
             playbutton.style.display="inline-block";
             playappearedonce=true;
             
