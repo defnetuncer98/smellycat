@@ -47,12 +47,22 @@
                         #catpaw:hover {
                           background-color: #e7ff5a;
                           color: white;
-                        }                           
+                        }      
+                        #loadingtext {
+                                position:absolute;
+                                top:70%;
+                                text-align:center;
+                                width: 240px;
+                                font-size: 400%;
+                                color:white;
+                                z-index: 100;
+                                font-family: 'Gillattoz';
+                                text-decoration:none;
+                        }  
                         #playbutton {
                                 position:absolute;
                                 top:70%;
                                 text-align:center;
-                                border: 1px solid #ffffff;
                                 width: 240px;
                                 font-size: 400%;
                                 color:white;
@@ -97,7 +107,7 @@
 	</head>
 	<body>
             <img id="loading" src="SmellyCatOpening.gif" style="display:block;"/>
-            <img id="loading2" src="SmellyCat.gif" style="display:none;"/>
+            <img id="loading2" src="SmellyCat.gif" style="display:block;"/>            
             <div id="container">
             </div>
             <div style="position:absolute;top:10%;left:10%;">
@@ -125,12 +135,14 @@
             <div style="align-items:center;display:flex;justify-content: center;">           
                 <a href=# id="playbutton">p l a y</a>                
             </div> 
+            <div style="align-items:center;display:flex;justify-content: center;">           
+                <a href=# id="loadingtext">l o a d i n g</a>                
+            </div>             
             
             <div style="position:absolute;right:5%;bottom:5%;">           
                 <a href=# id="catpaw"> HOW TO PLAY? </a>                
             </div> 
-
+            <script src="./src/three/examples/js/libs/ammo.js"></script>
             <script type="module" src="smellycat.js"></script>
-            <script src="src/three/examples/js/libs/ammo.js"></script>
 	</body>
 </html>
