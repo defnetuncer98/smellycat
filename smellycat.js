@@ -85,6 +85,7 @@ var timetext = document.getElementById('timetext');
 var scoretext = document.getElementById('scoretext');
 var container = document.getElementById('container');
 var playbutton = document.getElementById('playbutton');
+var loadingtext = document.getElementById('loadingtext');
 var loading = document.getElementById('loading');
 var loading2 = document.getElementById('loading2');
 playbutton.addEventListener('click', onPlayClick);
@@ -746,6 +747,7 @@ function animate() {
         }
         if(roomisloaded && rigidBodies.length==21 && !play && !playappearedonce) {
             playbutton.style.display="inline-block";
+            loadingtext.style.display = "none";
             playappearedonce=true;
             
         }
